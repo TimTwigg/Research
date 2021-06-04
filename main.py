@@ -21,7 +21,7 @@ def stone_path_loop(mc: MCController):
         mc.forward(2)
         mc.right()
 
-def block_ring(mc: MCController):    
+def block_ring(mc: MCController):
     mc.command("time set day")
     mc.command("weather clear")
     mc.command("tp @p -194.5 64 67.5 -180.0 40.0")
@@ -30,7 +30,7 @@ def block_ring(mc: MCController):
     mc.turn("around")
     mc.command("clear")
     mc.command("give @p stone")
-    
+
     for _ in range(3):
         mc.back()
         mc.center()
@@ -45,7 +45,7 @@ def block_ring(mc: MCController):
     for _ in range(3):
         mc.back()
         mc.click("right")
-    
+
     mc.forward()
     mc.jump_up()
     mc.forward()
@@ -56,4 +56,3 @@ if __name__ == "__main__":
     #stone_path_loop(mc)
     #block_ring(mc)
     print("Complete")
-    
