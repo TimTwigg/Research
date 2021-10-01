@@ -127,7 +127,7 @@ class MCController:
         pos = [int(i) for i in self.get_player_pos()]
         self.command(f"tp @p {'-' if pos[0]<0 else ''}{abs(pos[0]) + 0.5} {pos[1]} {'-' if pos[2]<0 else ''}{abs(pos[2]) + 0.5}")
         
-    def get_player_pos(self) -> [float]:
+    def get_player_pos(self):
         """
         Use minecraft command to print player position to chat (and then to log file), then read log file and return position.
         """
