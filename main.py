@@ -1,58 +1,19 @@
-from mccontroller import MCController
-
-def stone_path_loop(mc: MCController):
-    mc.command("time set day")
-    mc.command("weather clear")
-    mc.command("tp @p -185.5 68 77.5 -90.0 40.0")
-    for _ in range(3):
-        mc.forward(5)
-        mc.turn("left")
-        mc.forward()
-        mc.jump_up(7)
-        mc.turn("left")
-        mc.forward(4)
-        mc.turn("left")
-        mc.jump_down(4)
-        mc.turn("right")
-        mc.jump_down(3)
-        mc.turn("left")
-        mc.forward(3)
-        mc.turn("left")
-        mc.forward(2)
-        mc.right()
-
-def block_ring(mc: MCController):
-    mc.command("time set day")
-    mc.command("weather clear")
-    mc.command("tp @p -194.5 64 67.5 -180.0 40.0")
-    mc.command("fill -196 64 68 -186 66 58 air")
-    mc.forward(3)
-    mc.turn("around")
-    mc.command("clear")
-    mc.command("give @p stone")
-
-    for _ in range(3):
-        mc.back()
-        mc.center()
-        for _ in range(3):
-            mc.back()
-            mc.click("right")
-        mc.left()
-        mc.forward(2)
-        mc.turn("right")
-    mc.back()
-    mc.center()
-    for _ in range(3):
-        mc.back()
-        mc.click("right")
-
-    mc.forward()
-    mc.jump_up()
-    mc.forward()
-    mc.left()
+from mazeGenerator import main
+import shutil
 
 if __name__ == "__main__":
-    mc = MCController()
-    #stone_path_loop(mc)
-    #block_ring(mc)
+    maze = [
+        [0,0,0,0,0,0,3,0,0,9],
+        [0,0,0,3,0,0,1,0,0,1],
+        [0,0,1,1,1,1,2,1,0,1],
+        [0,0,2,0,0,0,0,1,0,1],
+        [0,3,1,2,1,1,0,1,0,1],
+        [0,0,3,0,0,2,0,2,0,1],
+        [1,1,2,1,0,1,0,1,2,1],
+        [2,0,0,2,0,1,0,0,0,0],
+        [1,0,0,1,2,1,0,0,0,0],
+        [8,0,0,0,0,0,0,0,0,0],
+    ]
+    main(maze, (0, 100, 0), (20, 101, 10), (0, -1), "test.mcfunction")
+    shutil.move("G:\\My Drive\\UCI\\Research\\Code\\test.mcfunction", "D:\\.minecraft\\saves\\functions\\datapacks\\test\\data\\test\\functions\\test.mcfunction")
     print("Complete")
