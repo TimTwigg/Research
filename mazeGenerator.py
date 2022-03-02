@@ -1,4 +1,4 @@
-# updated 16 February 2022
+# updated 22 February 2022
 # takes a 2d matrix representing the desired maze and the (x,y,z) coordinates of the lower north-west corner of the location
 # commands will be generated assuming the top left-hand corner is the north-west corner
 # matrix should use:
