@@ -3,7 +3,7 @@
 
 from Maze import Maze, DIR
 from enum import Enum
-from transform import transform
+from transform import transform, generateFalsePaths
 
 class Direction(Enum):
     UP = (0, -5)
@@ -79,14 +79,10 @@ def _generateCommandBlocks(maze: Maze, cmdCoords: tuple[int], cmdDirection: tupl
         elif block_type == Blocks.END:
             break
 
-        # change pos - recursively check for false paths
-        neighbours = _getNeighbours(maze, *pos)
-        for n in neighbours:
-            if n not in visited and TYPES[maze.get(*n)] in [Blocks.PATH, Blocks.PATH_TURN]:
-                pos = n
-                break
-            elif TYPES[maze.get(*n)] == Blocks.END:
-                return commands
+        neighbours = [i for i in _getNeighbours(maze, *pos) if maze.isPath(*i, DIR.HERE, [1, 2, 9]) and i not in visited]
+        assert len(neighbours) > 0, f"No neighbours {pos} {maze.get(*pos)} \n{maze}"
+        assert len(neighbours) == 1, f"Too many neighbours {pos} {maze.get(*pos)} \n{maze}"
+        pos = neighbours[0]
         visited.append(pos)
 
     return commands
@@ -105,7 +101,7 @@ def _findDirection(maze: Maze, x: int, z: int, visited: list[int]) -> tuple[int]
 
 def _getNeighbours(maze: Maze, x: int, z: int) -> list[tuple[int]]:
     cell = maze.getCell(x, z)
-    return [x for x in [cell.up(), cell.right(), cell.down(), cell.left()] if x is not None]
+    return [i for i in [cell.up(), cell.down(), cell.right(), cell.left()] if i is not None]
 
 
 def generate(maze: Maze, coords: tuple[int], cmdCoords: tuple[int], cmdDirection: tuple[int], filename: str) -> None:
@@ -122,6 +118,8 @@ def generate(maze: Maze, coords: tuple[int], cmdCoords: tuple[int], cmdDirection
     """
     
     maze = transform(maze)
-    commands = _generateCommandBlocks(maze, cmdCoords, cmdDirection) + _generateCommands(maze, coords, cmdCoords, cmdDirection)
+    commands = _generateCommandBlocks(maze, cmdCoords, cmdDirection)
+    maze = generateFalsePaths(maze)
+    commands += _generateCommands(maze, coords, cmdCoords, cmdDirection)
     with open(filename, "w") as f:
         f.write("\n".join(commands))

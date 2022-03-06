@@ -8,14 +8,17 @@ class Cell:
         self.element = element
         self.max_x, self.max_y = max
 
+    def __str__(self) -> str:
+        return f"Cell: x({self.x}), y({self.y}), element({self.element}), max({(self.max_x, self.max_y)})"
+
     def up(self) -> tuple[int]:
         return (self.x, self.y-1) if self.y > 0 else None
     
     def right(self) -> tuple[int]:
-        return (self.x+1, self.y) if self.x < self.max_x else None
+        return (self.x+1, self.y) if self.x < self.max_x-1 else None
 
     def down(self) -> tuple[int]:
-        return (self.x, self.y+1) if self.y < self.max_y else None
+        return (self.x, self.y+1) if self.y < self.max_y-1 else None
 
     def left(self) -> tuple[int]:
         return (self.x-1, self.y) if self.x > 0 else None
@@ -61,6 +64,8 @@ class Maze:
                 return False
 
     def get(self, x: int, y: int, dir: DIR = DIR.HERE) -> int:
+        if x < 0 or y < 0 or x >= self.max_x or y >= self.max_y:
+            return None
         match dir:
             case DIR.UP:
                 return self.maze[(x, y-1)].element
@@ -93,18 +98,3 @@ class Maze:
                 return (x-1, y)
             case _:
                 return None
-
-    def isFalsePath(self, x: int, y: int, dir: DIR) -> bool:
-        if self.isPath(x, y, dir):
-            x, y = self.go(x, y, dir)
-        
-        coords = [(x, y)]
-
-        for x,y in coords:
-            for d in [DIR.UP, DIR.RIGHT, DIR.DOWN, DIR.LEFT]:
-                if self.go(x, y, d) in coords: continue
-                elif self.get(x, y, d) == 3:
-                    return True
-                elif self.get(x, y, d) == 1:
-                    coords.append(self.go(x, y, d))
-        return False
