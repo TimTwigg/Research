@@ -13,7 +13,7 @@ class Cell:
 
     def up(self) -> tuple[int]:
         return (self.x, self.y-1) if self.y > 0 else None
-    
+
     def right(self) -> tuple[int]:
         return (self.x+1, self.y) if self.x < self.max_x-1 else None
 
@@ -31,6 +31,14 @@ class DIR(Enum):
     HERE = 5
 
 class Maze:
+    """
+    class Maze
+    Wrapper on 2D maze represented by 2D matrix. Intended for use with generate function in generate.py
+
+    params:
+        maze :: 2D array of lists containing ints. Use 0 as the stock, with the desired path demarcated by 1.
+                No turns, false paths, alternate paths, etc should be marked.
+    """
     def __init__(self, maze: list[list[int]]):
         self.maze = {}
         self.max_x = len(maze[0])
@@ -38,7 +46,7 @@ class Maze:
         for y in range(self.max_y):
             for x in range(self.max_x):
                 self.maze[(x,y)] = Cell(x, y, (self.max_x, self.max_y), maze[y][x])
-    
+
     def __str__(self) -> str:
         l = []
         for y in range(self.max_y):
