@@ -1,4 +1,4 @@
-# updated 5 March 2022
+# updated 22 March 2022
 from enum import Enum
 
 class Cell:
@@ -56,20 +56,23 @@ class Maze:
             l.append(t)
         return "\n".join([" ".join([str(x) if x != 0 else " " for x in t]) for t in l])
 
-    def isPath(self, x: int, y: int, dir: DIR, path_codes = [1,2]) -> bool:
-        match dir:
-            case DIR.UP:
-                return self.maze[(x, y-1)].element in path_codes
-            case DIR.RIGHT:
-                return self.maze[(x+1, y)].element in path_codes
-            case DIR.DOWN:
-                return self.maze[(x, y+1)].element in path_codes
-            case DIR.LEFT:
-                return self.maze[(x-1, y)].element in path_codes
-            case DIR.HERE:
-                return self.maze[(x, y)].element in path_codes
-            case _:
-                return False
+    def isPath(self, x: int, y: int, dir: DIR = DIR.HERE, path_codes = [1,2]) -> bool:
+        try:
+            match dir:
+                case DIR.UP:
+                    return self.maze[(x, y-1)].element in path_codes
+                case DIR.RIGHT:
+                    return self.maze[(x+1, y)].element in path_codes
+                case DIR.DOWN:
+                    return self.maze[(x, y+1)].element in path_codes
+                case DIR.LEFT:
+                    return self.maze[(x-1, y)].element in path_codes
+                case DIR.HERE:
+                    return self.maze[(x, y)].element in path_codes
+                case _:
+                    return False
+        except KeyError:
+            return False
 
     def get(self, x: int, y: int, dir: DIR = DIR.HERE) -> int:
         if x < 0 or y < 0 or x >= self.max_x or y >= self.max_y:
@@ -87,6 +90,10 @@ class Maze:
                 return self.maze[(x, y)].element
             case _:
                 return None
+
+    def getNeighbours(self, x: int, z: int) -> list[tuple[int]]:
+        cell = self.getCell(x, z)
+        return [i for i in [cell.up(), cell.down(), cell.right(), cell.left()] if i is not None]
 
     def getCell(self, x: int, y: int) -> Cell:
         return self.maze[(x, y)]

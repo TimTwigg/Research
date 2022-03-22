@@ -1,4 +1,4 @@
-# updated 5 March 2022
+# updated 22 March 2022
 # generate mc commands from Maze
 
 from Maze import Maze, DIR
@@ -79,7 +79,7 @@ def _generateCommandBlocks(maze: Maze, cmdCoords: tuple[int], cmdDirection: tupl
         elif block_type == Blocks.END:
             break
 
-        neighbours = [i for i in _getNeighbours(maze, *pos) if maze.isPath(*i, DIR.HERE, [1, 2, 9]) and i not in visited]
+        neighbours = [i for i in maze.getNeighbours(*pos) if maze.isPath(*i, DIR.HERE, [1, 2, 9]) and i not in visited]
         assert len(neighbours) > 0, f"No neighbours {pos} {maze.get(*pos)} \n{maze}"
         assert len(neighbours) == 1, f"Too many neighbours {pos} {maze.get(*pos)} \n{maze}"
         pos = neighbours[0]
@@ -89,20 +89,14 @@ def _generateCommandBlocks(maze: Maze, cmdCoords: tuple[int], cmdDirection: tupl
 
 
 def _findDirection(maze: Maze, x: int, z: int, visited: list[int]) -> tuple[int]:
-    neighbours = _getNeighbours(maze, x, z)
+    neighbours = maze.getNeighbours(x, z)
     for n in neighbours:
         if n not in visited and TYPES[maze.get(*n)] == Blocks.PATH:
-            turns = _getNeighbours(maze, *n)
+            turns = maze.getNeighbours(*n)
             for t in turns:
                 if t not in visited and t != (x,z) and TYPES[maze.get(*t)] in [Blocks.PATH, Blocks.PATH_TURN]:
                     if (t[0] == n[0]): return Direction.UP.value if t[1] < n[1] else Direction.DOWN.value
                     return Direction.LEFT.value if t[0] < n[0] else Direction.RIGHT.value
-
-
-def _getNeighbours(maze: Maze, x: int, z: int) -> list[tuple[int]]:
-    cell = maze.getCell(x, z)
-    return [i for i in [cell.up(), cell.down(), cell.right(), cell.left()] if i is not None]
-
 
 def generate(maze: Maze, coords: tuple[int], cmdCoords: tuple[int], cmdDirection: tuple[int], filename: str) -> None:
     """
