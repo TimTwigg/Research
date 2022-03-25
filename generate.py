@@ -1,4 +1,4 @@
-# updated 22 March 2022
+# updated 25 March 2022
 # generate mc commands from Maze
 
 from Maze import Maze, DIR
@@ -91,10 +91,10 @@ def _generateCommandBlocks(maze: Maze, cmdCoords: tuple[int], cmdDirection: tupl
 def _findDirection(maze: Maze, x: int, z: int, visited: list[int]) -> tuple[int]:
     neighbours = maze.getNeighbours(x, z)
     for n in neighbours:
-        if n not in visited and TYPES[maze.get(*n)] == Blocks.PATH:
+        if n not in visited and TYPES[maze.get(*n)] in [Blocks.PATH, Blocks.PATH_TURN]:
             turns = maze.getNeighbours(*n)
             for t in turns:
-                if t not in visited and t != (x,z) and TYPES[maze.get(*t)] in [Blocks.PATH, Blocks.PATH_TURN]:
+                if t not in visited and t != (x,z) and TYPES[maze.get(*t)] in [Blocks.PATH, Blocks.PATH_TURN, Blocks.END]:
                     if (t[0] == n[0]): return Direction.UP.value if t[1] < n[1] else Direction.DOWN.value
                     return Direction.LEFT.value if t[0] < n[0] else Direction.RIGHT.value
 

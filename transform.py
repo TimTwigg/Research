@@ -1,18 +1,5 @@
-# updated 22 March 2022
+# updated 25 March 2022
 # transform plain maze into correct protocol and generate false paths
-
-#maze = [
-#    [0,0,0,0,0,0,0,0,0,1],
-#    [0,0,0,0,0,0,0,0,0,1],
-#    [0,0,1,1,1,1,1,1,0,1],
-#    [0,0,1,0,0,0,0,1,0,1],
-#    [0,0,1,1,1,1,0,1,0,1],
-#    [0,0,0,0,0,1,0,1,0,1],
-#    [1,1,1,1,0,1,0,1,1,1],
-#    [1,0,0,1,0,1,0,0,0,0],
-#    [1,0,0,1,1,1,0,0,0,0],
-#    [1,0,0,0,0,0,0,0,0,0],
-#]
 
 from Maze import Maze, DIR
 
@@ -25,6 +12,7 @@ def transform(maze: Maze) -> Maze:
     while True:
         neighbours = [n for n in maze.getNeighbours(*pos) if maze.isPath(*n, DIR.HERE, [1]) and n not in visited]
         if len(neighbours) == 0:
+            # no path neighbours means we've reached the end
             maze.set(*pos, 9)
             break
 
@@ -51,16 +39,34 @@ def transform(maze: Maze) -> Maze:
     return maze
 
 def generateFalsePaths(maze: Maze) -> Maze:
-    m = Maze([
-        [3,1,1,1,1,3,0,0,0,9],
-        [0,1,0,1,0,0,3,0,0,1],
-        [0,3,1,1,1,1,2,1,3,1],
-        [0,0,2,0,0,0,0,1,0,1],
-        [3,1,1,2,1,1,0,1,0,1],
-        [0,0,3,0,0,2,0,2,0,1],
-        [1,1,2,1,0,1,0,1,2,1],
-        [2,0,0,2,0,1,0,0,1,0],
-        [1,0,0,1,2,1,0,0,1,0],
-        [8,0,0,0,0,3,1,1,1,0],
-    ])
-    return m
+    assert maze.isPath(0, maze.max_y-1, path_codes = [8]), "Maze must start in bottom left corner"
+    pos = (0, maze.max_y-1)
+    visited = [pos]
+
+    while not maze.isPath(*pos, path_codes=[9]):
+        pos = [i for i in maze.getNeighbours(*pos) if maze.isPath(*i, path_codes=[1, 2, 3, 9]) and i not in visited][0]
+        visited.append(pos)
+    visited.append(pos)
+
+    for pos in visited:
+        if maze.get(*pos) in [8, 9]:
+            continue
+        neighbours = [n for n in maze.getNeighbours(*pos) if n not in visited]
+        bad = []
+        for n in neighbours:
+            ns = maze.getNeighbours(*n)
+            for i in ns:
+                if i != pos and maze.isPath(*i, path_codes=[1, 2, 3, 8, 9]):
+                    bad.append(n)
+                    break
+
+        for n in bad:
+            neighbours.remove(n)
+
+        for n in neighbours:
+            maze.set(*n, 3)
+            if maze.get(*pos) == 3:
+                maze.set(*pos, 1)
+            visited.append(n)
+
+    return maze
