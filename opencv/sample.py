@@ -1,3 +1,5 @@
+# code I stole from stackoverflow that is meant to read a sudoku grid
+
 import cv2
 from imutils import contours
 import numpy as np
