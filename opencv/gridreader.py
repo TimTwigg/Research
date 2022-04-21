@@ -1,6 +1,7 @@
 import cv2
 from imutils import contours
 import numpy as np
+import os
 
 
 def reorder(points):
@@ -15,15 +16,17 @@ def reorder(points):
     return npoints
 
 # imports image
-image = cv2.imread("grid1red.png")
+current_dir = os.getcwd()
+print(current_dir)
+image = cv2.imread(r"C:\Users\vitoc\Documents\Coding Projects\Research\opencv\grid1red.png")
 side_count = 11 # num squares on a single side of the grid
 widthImg = heightImg = side_count * 50
 # converts to monochrome
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 #blurs image slightly
-blur = cv2.GaussianBlur(gray, (5,5), 0)
+# blur = cv2.GaussianBlur(gray, (5,5), 0)
 # adaptive thresholding                             this digit controls how much gets subtracted
-thresh = cv2.adaptiveThreshold(blur, 255, 1, 1, 13, 6)
+thresh = cv2.adaptiveThreshold(gray, 255, 1, 1, 13, 10)
 
 # finds all contours
 cnts, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -51,12 +54,10 @@ if biggest.size != 0:
     matrix = cv2.getPerspectiveTransform(pts1, pts2)
     warpedImgColor = cv2.warpPerspective(image, matrix, (widthImg, heightImg))
     warpedImgBW = cv2.cvtColor(warpedImgColor, cv2.COLOR_BGR2GRAY)
-    cv2.imshow("warped", warpedImgColor)
 
 # apply the same blur to the new image
 blur = cv2.GaussianBlur(warpedImgBW, (5,5), 0)
-# cv2.imshow("warped", blur)
-thresh = cv2.adaptiveThreshold(blur, 255, 1, 1, 13, 4)
+thresh = cv2.adaptiveThreshold(warpedImgBW, 255, 1, 1, 13, 4)
 cv2.imshow("first thresh", thresh)
 
 # finds all contours again
@@ -96,7 +97,7 @@ red = cv2.inRange(hsv, lower_red, upper_red)
 
 invert = 255 - thresh
 cv2.imshow("invert", invert)
-contours2 = cv2.findContours(invert, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+contours2 = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 contours2 = contours2[0] if len(contours2) == 2 else contours2[1]
 (contours2, _) = contours.sort_contours(contours2, method = "top-to-bottom")
 grid_rows = []
@@ -112,7 +113,7 @@ for (i, c) in enumerate(contours2, 1):
 for row in grid_rows:
     for c in row:
         mask = np.zeros(warpedImgColor.shape, dtype=np.uint8)
-        cv2.drawContours(mask, [c], -1, (255, 255, 255), 1)
+        # cv2.drawContours(mask, [c], -1, (255, 255, 255), 1)
         result = cv2.bitwise_and(warpedImgColor, mask)
         result[mask==0] = 255
         cv2.imshow('result', result)
