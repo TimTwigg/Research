@@ -18,7 +18,7 @@ def reorder(points):
 # imports image
 current_dir = os.getcwd()
 print(current_dir)
-image = cv2.imread(r"C:\Users\vitoc\Documents\Coding Projects\Research\opencv\grid1red.png")
+image = cv2.imread("grid1red.png")
 side_count = 11 # num squares on a single side of the grid
 widthImg = heightImg = side_count * 50
 # converts to monochrome
@@ -58,7 +58,7 @@ if biggest.size != 0:
 # apply the same blur to the new image
 blur = cv2.GaussianBlur(warpedImgBW, (5,5), 0)
 thresh = cv2.adaptiveThreshold(warpedImgBW, 255, 1, 1, 13, 4)
-cv2.imshow("first thresh", thresh)
+# cv2.imshow("first thresh", thresh)
 
 # finds all contours again
 # cnts, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -76,7 +76,7 @@ lower_red = np.array([0, 100, 100])
 upper_red = np.array([7, 255, 255])
 red = cv2.inRange(hsv, lower_red, upper_red)
 
-# grid = np.zeros((side_count, side_count), dtype=int)
+grid = np.zeros((side_count, side_count), dtype=int)
 # r = 0
 # c = -1
 # for i in contours:
@@ -96,34 +96,46 @@ red = cv2.inRange(hsv, lower_red, upper_red)
 
 
 invert = 255 - thresh
-cv2.imshow("invert", invert)
-contours2 = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+# cv2.imshow("invert", invert)
+contours2 = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 contours2 = contours2[0] if len(contours2) == 2 else contours2[1]
 (contours2, _) = contours.sort_contours(contours2, method = "top-to-bottom")
 grid_rows = []
 row = []
+rc = 0
+cc = 0
 for (i, c) in enumerate(contours2, 1):
     area = cv2.contourArea(c)
     if area > 50:
         row.append(c)
-        if i % 9 == 0:
-            (contours2, _) = contours.sort_contours(row, method="left-to-right")
-            grid_rows.append(contours2)
+        if i % side_count == 0:
+            (contours3, _) = contours.sort_contours(row, method="left-to-right")
+            grid_rows.append(contours3)
             row = []
+for i, row in enumerate(grid_rows):
+    for i2, c in enumerate(row):
+        # grid[i, i2] = 1
+        pass
+
 for row in grid_rows:
     for c in row:
         mask = np.zeros(warpedImgColor.shape, dtype=np.uint8)
-        # cv2.drawContours(mask, [c], -1, (255, 255, 255), 1)
-        result = cv2.bitwise_and(warpedImgColor, mask)
-        result[mask==0] = 255
-        cv2.imshow('result', result)
-        cv2.waitKey(20)
+        cv2.drawContours(mask, [c], -1, (0, 255, 0), 1)
+        cv2.imshow('mask', mask)
+        # cv2.waitKey()
+        # result = cv2.bitwise_and(warpedImgColor, mask)
+        # result[mask==0] = 255
+        # cv2.imshow('result', result)
+        cv2.waitKey(15)
 
 
             # current = warpedImgColor[y:y+h, x:x+w]
         #     cv2.imshow('cut', warpedImgColor[y:y+h, x:x+w])
         #     print('Average color (BGR): ', 
         #     np.array(cv2.mean(warpedImgColor[y:y+h, x:x+w])).astype(np.uint8))
+
+
+print(grid)
 
 cv2.waitKey(0)
 

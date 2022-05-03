@@ -51,7 +51,7 @@ if biggest.size != 0:
     warpedImgColor = cv2.warpPerspective(image, matrix, (widthImg, heightImg))
     warpedImgBW = cv2.cvtColor(warpedImgColor, cv2.COLOR_BGR2GRAY)
 
-count = 0
+count = 1
 max_size = 0
 matrix = []
 new_contours = []
@@ -81,5 +81,12 @@ for each in enumerate(cnts):
 
 # draw lines around contours
 cv2.drawContours(image, new_contours, -1, (0, 255, 0))
+
+# contains x, y cokords of the cell corners 
+approx = cv2.approxPolyDP(cnts[0], 0.01*cv2.arcLength(cnts[0], True), True)
+
+cv2.imshow("test", image)
+cv2.waitKey(0)
+
 
 #apr
