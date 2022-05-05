@@ -1,7 +1,7 @@
 {
     "mcpath": "D:\\.minecraft",
     "save": "test",
-    "func": "test",
+    "func": "build",
     "coords": {
         "x": 0,
         "y": -50,
