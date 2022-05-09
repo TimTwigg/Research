@@ -9,7 +9,7 @@ required, though the value of function name is unimportant.
 NOTE: the App requires two json files: data.json containing a the matrix, and
 config.json containing the default/previous values.
 
-## Generating a Maze File Directly
+## Generating a Maze File Directly (Not Recommended)
 
 Create a Maze object (described in Maze.py) with a 2d matrix. Pass the Maze to
 the generate function from generate.py. The generate function also requires
