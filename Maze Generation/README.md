@@ -26,7 +26,7 @@ values will almost always be (0, -1).
 
 The MC function requires a fairly specific directory path to work. App has
 methods which create these paths:
-_functionPath is the basic directory path. \n
+_functionPath is the basic directory path.
 _metaPath is the location of the mcmeta file which describes the datapack.
 _sourcePath evaluates the location of the file running the program, which is
 where the mcfunction file will initially be created.
