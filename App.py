@@ -12,10 +12,10 @@ from MazeGeneration.generate import generate
 from opencv.gridReaderFinal import GridReader
 
 class App(tk.Tk):
-    """Minecraft Maze Generator"""
+    """Minecraft Challenge Generator"""
     def __init__(self):
         super().__init__()
-        self.title("Minecraft Maze Generation")
+        self.title("Minecraft Challenge Generation")
         self.resizable(0, 0)
         self.config(borderwidth = 3, relief = "ridge")
 
@@ -155,6 +155,9 @@ class App(tk.Tk):
     
     def _generate(self):
         """Call generate function and move mcfunction file"""
+
+        # TODO: read matrix from GridReader rather than file
+        # TODO: manage errors from validating grid
         with open("data.json", "r") as f:
             data = json.loads(f.read())
         maze = Maze(data["maze"])
