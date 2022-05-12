@@ -15,6 +15,14 @@ class GridReader:
         self.__warped = self.warp(self.threshImage())
 
 
+    def setImage(self, new_image: "image"):
+        '''
+        Changes the image the object is reading. 
+
+        new_image -- path to the new image
+        '''
+        self.__image == new_image
+
     def reorder(self, points: np.ndarray) -> np.ndarray:
         '''
         Takes an array of points and orders them properly from left -> right, top -> bottom. 
