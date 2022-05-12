@@ -22,6 +22,15 @@ class GridReader:
         '''
         self.__image == new_image
 
+    def setSide(self, new_side_length: int):
+        '''
+        Changes the number of squares on one side to inputted number. 
+
+        new_side_length -- int for new number of sides
+        '''
+        self.__squares_on_side = new_side_length
+
+
     def reorder(self, points: np.ndarray) -> np.ndarray:
         '''
         Takes an array of points and orders them properly from left -> right, top -> bottom. 

@@ -38,3 +38,7 @@ required, and no editing should be done to add more functions to the pack.
 ## Expansion
 
 The App will be expanded to generate other puzzles, such as the sound puzzle.
+
+## mccontroller
+
+This is an old project which is no longer used.
