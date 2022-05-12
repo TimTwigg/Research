@@ -1,7 +1,9 @@
 import cv2
+from cv2 import pointPolygonTest
 from imutils import contours
 import numpy as np
-import os
+import os,math
+import copy
 
 
 def reorder(points):
@@ -18,7 +20,7 @@ def reorder(points):
 # imports image
 current_dir = os.getcwd()
 print(current_dir)
-image = cv2.imread(r"C:\Users\vitoc\Documents\Coding Projects\Research\opencv\grid1red.png")
+image = cv2.imread(r"grid1red.png")
 side_count = 11 # num squares on a single side of the grid
 widthImg = heightImg = side_count * 50
 # converts to monochrome
@@ -97,29 +99,64 @@ red = cv2.inRange(hsv, lower_red, upper_red)
 
 invert = 255 - thresh
 cv2.imshow("invert", invert)
-contours2 = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+#contours2 = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+contours2 = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 contours2 = contours2[0] if len(contours2) == 2 else contours2[1]
 (contours2, _) = contours.sort_contours(contours2, method = "top-to-bottom")
 grid_rows = []
 row = []
+
+# loop 
 for (i, c) in enumerate(contours2, 1):
     area = cv2.contourArea(c)
     if area > 50:
         row.append(c)
         if i % 9 == 0:
-            (contours2, _) = contours.sort_contours(row, method="left-to-right")
-            grid_rows.append(contours2)
+            (contours3, _) = contours.sort_contours(row, method="left-to-right")
+            grid_rows.append(contours3)
             row = []
+#print(grid_rows)
+last_c = None
 for row in grid_rows:
     for c in row:
+        #if(pointPolygonTest(contour, pointFromOtherContour, false) > 0)
+        if type(last_c) != None:
+            try:
+                if pointPolygonTest(c, last_c, False) > 0:
+                    print("inside")
+                #else:
+                    #print("outside")
+            except:
+                pass
+        
         mask = np.zeros(warpedImgColor.shape, dtype=np.uint8)
-        # cv2.drawContours(mask, [c], -1, (255, 255, 255), 1)
+        cv2.drawContours(mask, [c], -1, (255, 255, 255), 1)
         result = cv2.bitwise_and(warpedImgColor, mask)
         result[mask==0] = 255
+        
+        last_c = tuple(c[c[:, :, 0].argmin()][0])
+        left = tuple(c[c[:, :, 0].argmin()][0])
+        right = tuple(c[c[:, :, 0].argmax()][0])
+        top = tuple(c[c[:, :, 1].argmin()][0])
+        bottom = tuple(c[c[:, :, 1].argmax()][0])
+        """
+
+        #print(c)
+        """
+        
+        print(f"{left}, {right}, {top}, {bottom}: {type(left)}")
+        last_c = (int(last_c[0]), int(last_c[1]))
+        #print(last_c)
+        #print(c[c[:, :, 0].argmin()][0])
+        input("next")
+        x = math.floor((right[0]+left[0])/2)
+        y = math.floor((bottom[0]+top[0])/2)
+        print(f"{x},{y}")
+        circ = cv2.circle(warpedImgColor, (x,y), 2, (0,0,255),2)
         cv2.imshow('result', result)
-        cv2.waitKey(20)
-
-
+        cv2.imshow('track', circ)
+        #cv2.drawMarker(result, left, (0,0,255))
+        cv2.waitKey(80)
             # current = warpedImgColor[y:y+h, x:x+w]
         #     cv2.imshow('cut', warpedImgColor[y:y+h, x:x+w])
         #     print('Average color (BGR): ', 
