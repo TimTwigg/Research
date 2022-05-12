@@ -1,4 +1,5 @@
-# updated 25 March 2022
+# updated 29 April 2022
+# Author: Timothy Twigg
 # transform plain maze into correct protocol and generate false paths
 
 from Maze import Maze, DIR

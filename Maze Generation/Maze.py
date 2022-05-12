@@ -1,4 +1,5 @@
-# updated 22 March 2022
+# updated 29 April 2022
+# Author: Timothy Twigg
 from enum import Enum
 
 class Cell:

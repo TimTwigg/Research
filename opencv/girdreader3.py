@@ -1,9 +1,7 @@
 import cv2
 from imutils import contours
 import numpy as np
-import os
-
-# code generously donated from (i stole it from) https://stackoverflow.com/questions/36508001/determining-if-a-color-is-within-a-contour-opencv
+import os 
 
 def reorder(points):
     points = points.reshape((4, 2))
@@ -16,10 +14,10 @@ def reorder(points):
     npoints[2] = points[np.argmax(diff)]
     return npoints
 
-# imports image
+
 current_dir = os.getcwd()
 print(current_dir)
-image = cv2.imread(r"C:\Users\vitoc\Documents\Coding Projects\Research\opencv\grid1red.png")
+image = cv2.imread("grid1red.png")
 side_count = 11 # num squares on a single side of the grid
 widthImg = heightImg = side_count * 50
 # converts to monochrome
@@ -45,48 +43,52 @@ for i in cnts:
 # warps perspective to ensure the gridlines are straight as possible
 if biggest.size != 0:
     biggest = reorder(biggest)
+    cv2.drawContours(image, biggest, -1, (0, 0, 255), 10)
     pts1 = np.float32(biggest)
     pts2 = np.float32([[0, 0], [widthImg, 0], [0, heightImg], [widthImg, heightImg]])
     matrix = cv2.getPerspectiveTransform(pts1, pts2)
     warpedImgColor = cv2.warpPerspective(image, matrix, (widthImg, heightImg))
     warpedImgBW = cv2.cvtColor(warpedImgColor, cv2.COLOR_BGR2GRAY)
 
-count = 1
-max_size = 0
-matrix = []
-new_contours = []
-grid_contour = 0
-grid_contour_row = None
-grid_contour_column = None
-for each in enumerate(cnts):
+# apply the same blur to the new image
+blur = cv2.GaussianBlur(warpedImgBW, (5,5), 0)
+thresh = cv2.adaptiveThreshold(warpedImgBW, 255, 1, 1, 13, 4)
+grid = np.zeros((side_count, side_count), dtype=int)
 
-    # used to find midpoints
-    M = cv2.moments(cnts[count])
-    row = int(M['m10']/M['m00'])
-    column = int(M['m01']/M['m00'])
+invert = 255 - thresh
+contours2 = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+contours2 = contours2[0] if len(contours2) == 2 else contours2[1]
+(contours2, _) = contours.sort_contours(contours2, method = "top-to-bottom")
+print(len(contours2))
+grid_rows = []
+row = []
+total = 0
+for (i, c) in enumerate(contours2, 1):
+    area = cv2.contourArea(c)
+    if area > 50:
+        row.append(c)
+        if i % side_count == 0:
+            (contours3, _) = contours.sort_contours(row, method="left-to-right")
+            grid_rows.append(contours3)
+            row = []
 
-    size = cv2.contourArea(cnts[count])
-    if(size > max_size):
-        new_contours.append(cnts[grid_contour])
-        # mark each cell for testing
-        if (grid_contour_row != None and grid_contour_column != None):
-            cv2.putText(image, "0", \
-                    (grid_contour_row, grid_contour_column), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0))
-        grid_contour = count
-        grid_contour_row = row
-        grid_contour_column = column
-    else:
-        new_contours.append(cnts[count])
-    count += 1
+for i, row in enumerate(grid_rows):
+    for i2, c in enumerate(row):
+        pass
 
-# draw lines around contours
-cv2.drawContours(image, new_contours, -1, (0, 255, 0))
+for row in grid_rows:
+    for c in row:
+        mask = np.zeros(warpedImgColor.shape, dtype=np.uint8)
+        cv2.drawContours(mask, [c], -1, (0, 255, 0), 1)
+        # cv2.imshow('mask', mask)
+        # cv2.waitKey()
+        # result = cv2.bitwise_and(warpedImgColor, mask)
+        # result[mask==0] = 255
+        # cv2.imshow('result', result)
+        # cv2.waitKey(15)
 
-# contains x, y cokords of the cell corners 
-approx = cv2.approxPolyDP(cnts[0], 0.01*cv2.arcLength(cnts[0], True), True)
+print(grid)
 
-cv2.imshow("test", image)
 cv2.waitKey(0)
 
-
-#apr
+cv2.destroyAllWindows()
