@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+from math import floor
 
 class GridReader:
     def __init__(self, image: str, squares_on_side: int):
@@ -39,6 +40,7 @@ class GridReader:
 
         returns: sorted array of points
         '''
+        print(points)
         points = points.reshape((4, 2))
         npoints = np.zeros((4, 1, 2), dtype=np.int32)
         add = points.sum(1)
@@ -75,6 +77,7 @@ class GridReader:
         '''
         # finds all contours
         cnts, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        cv2.drawContours(thresh, cnts, -1,(255, 255, 255), 3)
 
         # finds the largest square, the border of the grid
         max_area = 0
@@ -88,9 +91,11 @@ class GridReader:
                     max_area = area
                     biggest = i
             c += 1
-
+        cv2.imshow('name of the window', thresh)
+        cv2.waitKey(0)
         # warps perspective to ensure the gridlines are straight as possible
         if biggest.size != 0:
+            print(f'biggest: {biggest}')
             biggest = self.reorder(biggest)
             pts1 = np.float32(biggest)
             pts2 = np.float32([[0, 0], [self.__widthImg, 0], [0, self.__heightImg], [self.__widthImg, self.__heightImg]])
@@ -129,7 +134,7 @@ class GridReader:
 
 if __name__ == '__main__':
     #r = GridReader('grid1red.png', 1y)
-    r = GridReader('opencv_frame_0.png', 19)
+    r = GridReader('opencv_frame_0.png', 11)
     
     print(r.readGrid())
 
