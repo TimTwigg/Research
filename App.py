@@ -1,5 +1,4 @@
-# updated 29 April 2022
-# Author: Timothy Twigg
+# updated 12 May 2022
 
 import tkinter as tk
 from tkinter import messagebox
@@ -8,8 +7,9 @@ import json
 import shutil
 from pathlib import Path
 
-from Maze import Maze
-from generate import generate
+from MazeGeneration.Maze import Maze
+from MazeGeneration.generate import generate
+from opencv.gridReaderFinal import GridReader
 
 class App(tk.Tk):
     """Minecraft Maze Generator"""
