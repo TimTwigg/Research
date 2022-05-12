@@ -1,6 +1,5 @@
 import numpy as np
 import cv2
-import os
 
 class GridReader:
     def __init__(self, image: str, squares_on_side: int):
