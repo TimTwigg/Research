@@ -109,23 +109,21 @@ for (i, c) in enumerate(contours2, 1):
     if area > 50:
         row.append(c)
         if i % side_count == 0:
-            (contours3, _) = contours.sort_contours(row, method="left-to-right")
-            grid_rows.append(contours3)
+            (contours2, _) = contours.sort_contours(row, method="left-to-right")
+            grid_rows.append(contours2)
             row = []
-for i, row in enumerate(grid_rows):
-    for i2, c in enumerate(row):
-        # grid[i, i2] = 1
-        pass
+# for i, row in enumerate(grid_rows):
+#     for i2, c in enumerate(row):
+#         # grid[i, i2] = 1
+#         pass
 
 for row in grid_rows:
     for c in row:
         mask = np.zeros(warpedImgColor.shape, dtype=np.uint8)
-        cv2.drawContours(mask, [c], -1, (0, 255, 0), 1)
         cv2.imshow('mask', mask)
-        # cv2.waitKey()
-        # result = cv2.bitwise_and(warpedImgColor, mask)
-        # result[mask==0] = 255
-        # cv2.imshow('result', result)
+        result = cv2.bitwise_and(warpedImgColor, mask)
+        result[mask==0] = 255
+        cv2.imshow('result', result)
         cv2.waitKey(15)
 
 
