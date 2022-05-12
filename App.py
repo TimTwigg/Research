@@ -1,6 +1,7 @@
 # updated 12 May 2022
 
 import tkinter as tk
+import tkinter.ttk as ttk
 from tkinter import messagebox
 import sys
 import json
@@ -10,6 +11,29 @@ from pathlib import Path
 from MazeGeneration.Maze import Maze
 from MazeGeneration.generate import generate
 from opencv.gridReaderFinal import GridReader
+
+class MazeFrame(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.false = tk.BooleanVar()
+        self.false.set(True)
+        self.light = tk.BooleanVar()
+        self.light.set(False)
+
+        cb1 = tk.Checkbutton(self, text = "False Paths", variable = self.false)
+        cb1.grid(row = 0, column = 0)
+        cb2 = tk.Checkbutton(self, text = "Light", variable = self.light)
+        cb2.grid(row = 0, column = 1)
+
+    def resolve(self):
+        return {"falsePaths": self.false.get(), "light": self.light.get()}
+
+class SoundFrame(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent)
+    
+    def resolve(self):
+        return {}
 
 class App(tk.Tk):
     """Minecraft Challenge Generator"""
@@ -21,6 +45,7 @@ class App(tk.Tk):
 
         self._setup()
         self._load()
+        self._makeframe()
 
         self.protocol("WM_DELETE_WINDOW", sys.exit)
         self.mainloop()
@@ -29,12 +54,12 @@ class App(tk.Tk):
         """Set up window"""
         self.mcpath = tk.StringVar()
         self.save = tk.StringVar()
-        self.func = tk.StringVar()
         self.x = tk.IntVar()
         self.y = tk.IntVar()
         self.z = tk.IntVar()
-        self.false = tk.BooleanVar()
-        self.light = tk.BooleanVar()
+        self.puzzleType = tk.StringVar()
+
+        self.puzzleTypes = ["Maze", "Sound Puzzle"]
 
         l1 = tk.Label(self, text = "MC Path")
         l1.grid(row = 0, column = 0, sticky = "w")
@@ -46,15 +71,10 @@ class App(tk.Tk):
         e2 = tk.Entry(self, textvariable = self.save)
         e2.grid(row = 1, column = 1)
 
-        l3 = tk.Label(self, text = "Function Name")
+        l3 = tk.Label(self, text = "North-West Corner x,y,z")
         l3.grid(row = 2, column = 0, sticky = "w")
-        e3 = tk.Entry(self, textvariable = self.func)
-        e3.grid(row = 2, column = 1)
-
-        l4 = tk.Label(self, text = "North-West Corner x,y,z")
-        l4.grid(row = 3, column = 0, sticky = "w")
         f = tk.Frame(self)
-        f.grid(row = 3, column = 1)
+        f.grid(row = 2, column = 1)
 
         num1 = tk.Entry(f, width = 5, textvariable = self.x)
         num1.config(validate = "key", vcmd = (num1.register(self._validate), "%s", "%S", "%d"))
@@ -68,10 +88,11 @@ class App(tk.Tk):
         num3.config(validate = "key", vcmd = (num3.register(self._validate), "%s", "%S", "%d"))
         num3.grid(row = 0, column = 2)
 
-        cb1 = tk.Checkbutton(self, text = "False Paths", variable = self.false)
-        cb1.grid(row = 4, column = 0)
-        cb2 = tk.Checkbutton(self, text = "Light", variable = self.light)
-        cb2.grid(row = 4, column = 1)
+        l4 = tk.Label(self, text = "Puzzle Type")
+        l4.grid(row = 3, column = 0, sticky = "w")
+        combo1 = ttk.Combobox(self, state = "readonly", textvariable = self.puzzleType)
+        combo1["values"] = self.puzzleTypes
+        combo1.grid(row = 3, column = 1)
 
         b = tk.Button(self, text = "Generate", command = self.done)
         b.grid(row = 5, column = 0, columnspan = 2)
@@ -83,12 +104,18 @@ class App(tk.Tk):
         fhand.close()
         self.mcpath.set(data["mcpath"])
         self.save.set(data["save"])
-        self.func.set(data["func"])
         self.x.set(data["coords"]["x"])
         self.y.set(data["coords"]["y"])
         self.z.set(data["coords"]["z"])
-        self.false.set(True)
-        self.light.set(False)
+        self.puzzleType.set("Maze")
+
+    def _makeframe(self):
+        """Make the frame gui options which are puzzle-dependent"""
+        if self.puzzleType.get() == "Maze":
+            self.optionsFrame = MazeFrame(self)
+        elif self.puzzleType.get() == "Sound Puzzle":
+            self.optionsFrame = SoundFrame(self)
+        self.optionsFrame.grid(row = 4, column = 0, columnspan = 2)
 
     def _validate(self, prevStr, inStr, actTyp):
         if actTyp == "1":
@@ -100,7 +127,7 @@ class App(tk.Tk):
 
     def _functionPath(self) -> str:
         """Build function path from provided MC path and world name"""
-        return f"{self.mcpath.get()}\\saves\\{self.save.get()}\\datapacks\\maze\\data\\{self.func.get()}\\functions"
+        return f"{self.mcpath.get()}\\saves\\{self.save.get()}\\datapacks\\maze\\data\\build\\functions"
 
     def _metaPath(self) -> str:
         """Build meta pack path from provided MC path and world name"""
@@ -108,7 +135,7 @@ class App(tk.Tk):
 
     def _sourcePath(self) -> str:
         """Build mcfunction source path"""
-        p = Path().resolve() / f"{self.func.get()}.mcfunction"
+        p = Path().resolve() / f"build.mcfunction"
         return str(p)
 
     def _make_path(self):
@@ -116,7 +143,7 @@ class App(tk.Tk):
         PACKMETA = {
             "pack": {
                 "pack_format": 1,
-                "description": self.func.get()
+                "description": "build"
             }
         }
 
@@ -127,7 +154,7 @@ class App(tk.Tk):
 
     def done(self):
         """Begin generation process, called by button"""
-        if len(self.mcpath.get()) < 1 or len(self.save.get()) < 1 or len(self.func.get()) < 1:
+        if len(self.mcpath.get()) < 1 or len(self.save.get()) < 1:
             messagebox.showerror("Generation Error", "All fields are required")
             return
         elif not Path(self.mcpath.get()).exists():
@@ -140,7 +167,6 @@ class App(tk.Tk):
         data = {
             "mcpath": self.mcpath.get(),
             "save": self.save.get(),
-            "func": self.func.get(),
             "coords": {
                 "x": self.x.get(),
                 "y": self.y.get(),
@@ -150,22 +176,34 @@ class App(tk.Tk):
         with open("config.json", "w") as f:
             json.dump(data, f, indent = 4)
 
-        self._make_path()
         self._generate()
     
     def _generate(self):
         """Call generate function and move mcfunction file"""
 
         # TODO: read matrix from GridReader rather than file
-        # TODO: manage errors from validating grid
         with open("data.json", "r") as f:
-            data = json.loads(f.read())
-        maze = Maze(data["maze"])
+            grid = json.loads(f.read())["maze"]
+
+        #gr = GridReader()
 
         coords = (self.x.get(), self.y.get(), self.z.get())
-        cmdCoords = (self.x.get() + maze.max_x + 5, self.y.get() + 1, self.z.get() + maze.max_y)
-        cmdDirection = (0, -1)
 
-        generate(maze, coords, cmdCoords, cmdDirection, f"{self.func.get()}.mcfunction", light = self.light.get(), falsePaths = self.false.get())
-        shutil.move(self._sourcePath(), self._functionPath() + f"\\{self.func.get()}.mcfunction")
+        try:
+            if self.puzzleType.get() == "Maze":
+                maze = Maze(grid)
+                cmdCoords = (self.x.get() + maze.max_x + 5, self.y.get() + 1, self.z.get() + maze.max_y)
+                cmdDirection = (0, -1)
+                generate(maze, coords, cmdCoords, cmdDirection, f"build.mcfunction", **self.optionsFrame.resolve())
+            
+            elif self.puzzleType.get() == "Sound Puzzle":
+                pass
+            
+            # move the mcfunction file into the world datapack files
+            #self._make_path()
+            #shutil.move(self._sourcePath(), self._functionPath() + f"\\build.mcfunction")
+        
+        except AssertionError:
+            messagebox.showerror("Maze Generation", "Maze generation threw error: " + sys.exc_info()[1].args[0])
+            return
         sys.exit()

@@ -1,9 +1,9 @@
 # updated 12 May 2022
 # generate mc commands from Maze
 
-from Maze import Maze, DIR
+from MazeGeneration.Maze import Maze, DIR
 from enum import Enum
-from transform import transform, generateFalsePaths
+from MazeGeneration.transform import transform, generateFalsePaths
 
 def _generateCommands(maze: Maze, coords: tuple[int], cmdCoords: tuple[int], cmdDirection: tuple[int]) -> list[str]:
     assert len(coords) == 3, "Coords must have x, y, and z values"

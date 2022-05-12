@@ -1,7 +1,7 @@
 # updated 12 May 2022
 # transform plain maze into correct protocol and generate false paths
 
-from Maze import Maze, DIR
+from MazeGeneration.Maze import Maze, DIR
 
 def transform(maze: Maze) -> Maze:
     assert maze.isPath(0, maze.max_y-1, path_codes = [1]), "Maze must start in bottom left corner"
