@@ -119,7 +119,8 @@ class GridReader:
         return(self.__grid)
 
 if __name__ == '__main__':
-    r = GridReader('grid1red.png', 11)
+    #r = GridReader('grid1red.png', 1y)
+    r = GridReader('opencv_frame_0.png', 19)
     
     print(r.readGrid())
 
