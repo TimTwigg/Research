@@ -1,8 +1,6 @@
-# updated 29 April 2022
-# Author: Timothy Twigg
+# updated 12 May 2022
 # generate mc commands from Maze
 
-from tkinter import END
 from Maze import Maze, DIR
 from enum import Enum
 from transform import transform, generateFalsePaths
