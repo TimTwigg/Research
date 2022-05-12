@@ -1,6 +1,5 @@
 import numpy as np
 import cv2
-import os
 
 class GridReader:
     def __init__(self, image: str, squares_on_side: int):
@@ -14,6 +13,14 @@ class GridReader:
         self.__grid = np.zeros((self.__squares_on_side, self.__squares_on_side), dtype=int)
         self.__warped = self.warp(self.threshImage())
 
+
+    def setImage(self, new_image: "image"):
+        '''
+        Changes the image the object is reading. 
+
+        new_image -- path to the new image
+        '''
+        self.__image == new_image
 
     def reorder(self, points: np.ndarray) -> np.ndarray:
         '''
