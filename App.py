@@ -1,4 +1,5 @@
-# updated 12 May 2022
+# updated 13 May 2022
+# tkinter App allowing user to set config options for challenge generation
 
 import tkinter as tk
 import tkinter.ttk as ttk
@@ -13,12 +14,11 @@ from MazeGeneration.generate import generate
 from opencv.gridReaderFinal import GridReader
 
 class MazeFrame(tk.Frame):
-    def __init__(self, parent):
-        super().__init__(parent)
+    """Frame containing maze-specific config options"""
+    def __init__(self, parent, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
         self.false = tk.BooleanVar()
-        self.false.set(True)
         self.light = tk.BooleanVar()
-        self.light.set(False)
 
         cb1 = tk.Checkbutton(self, text = "False Paths", variable = self.false)
         cb1.grid(row = 0, column = 0)
@@ -28,12 +28,22 @@ class MazeFrame(tk.Frame):
     def resolve(self):
         return {"falsePaths": self.false.get(), "light": self.light.get()}
 
+    def load(self, options: dict):
+        """Load default config values"""
+        self.false.set(options["falsePaths"])
+        self.light.set(options["light"])
+
 class SoundFrame(tk.Frame):
-    def __init__(self, parent):
-        super().__init__(parent)
+    """Frame containing soundPuzzle-specific config options"""
+    def __init__(self, parent, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
     
     def resolve(self):
         return {}
+    
+    def load(self, options: dict):
+        """Load default config values"""
+        pass
 
 class App(tk.Tk):
     """Minecraft Challenge Generator"""
@@ -45,7 +55,6 @@ class App(tk.Tk):
 
         self._setup()
         self._load()
-        self._makeframe()
 
         self.protocol("WM_DELETE_WINDOW", sys.exit)
         self.mainloop()
@@ -92,32 +101,45 @@ class App(tk.Tk):
         l4.grid(row = 3, column = 0, sticky = "w")
         combo1 = ttk.Combobox(self, state = "readonly", textvariable = self.puzzleType)
         combo1["values"] = self.puzzleTypes
+        combo1.bind("<<ComboboxSelected>>", self._loadframe)
         combo1.grid(row = 3, column = 1)
+
+        self.mazeFrame = MazeFrame(self)
+        self.soundFrame = SoundFrame(self)
 
         b = tk.Button(self, text = "Generate", command = self.done)
         b.grid(row = 5, column = 0, columnspan = 2)
 
     def _load(self):
         """Load existing config"""
-        fhand = open("config.json")
-        data = json.loads(fhand.read())
-        fhand.close()
+        try:
+            fhand = open("config.json")
+            data = json.loads(fhand.read())
+            fhand.close()
+        except FileNotFoundError:
+            return
+        finally:
+            self.puzzleType.set("Maze")
+            self._loadframe()
         self.mcpath.set(data["mcpath"])
         self.save.set(data["save"])
         self.x.set(data["coords"]["x"])
         self.y.set(data["coords"]["y"])
         self.z.set(data["coords"]["z"])
-        self.puzzleType.set("Maze")
+        self.mazeFrame.load(data["mazeOptions"])
+        self.soundFrame.load(data["soundOptions"])
 
-    def _makeframe(self):
-        """Make the frame gui options which are puzzle-dependent"""
+    def _loadframe(self, event = None):
+        """Grid the appropriate challenge-dependent frame gui options"""
         if self.puzzleType.get() == "Maze":
-            self.optionsFrame = MazeFrame(self)
+            self.soundFrame.grid_forget()
+            self.mazeFrame.grid(row = 4, column = 0, columnspan = 2)
         elif self.puzzleType.get() == "Sound Puzzle":
-            self.optionsFrame = SoundFrame(self)
-        self.optionsFrame.grid(row = 4, column = 0, columnspan = 2)
+            self.mazeFrame.grid_forget()
+            self.soundFrame.grid(row = 4, column = 0, columnspan = 2)
 
     def _validate(self, prevStr, inStr, actTyp):
+        """Validation function to allow only negative sign and numeric values"""
         if actTyp == "1":
             if not inStr.isnumeric() and inStr != "-":
                 return False
@@ -171,7 +193,9 @@ class App(tk.Tk):
                 "x": self.x.get(),
                 "y": self.y.get(),
                 "z": self.z.get()
-            }
+            },
+            "mazeOptions": self.mazeFrame.resolve(),
+            "soundOptions": self.soundFrame.resolve()
         }
         with open("config.json", "w") as f:
             json.dump(data, f, indent = 4)
@@ -186,6 +210,7 @@ class App(tk.Tk):
             grid = json.loads(f.read())["maze"]
 
         #gr = GridReader()
+        #grid = gr.readGrid()
 
         coords = (self.x.get(), self.y.get(), self.z.get())
 
@@ -194,7 +219,7 @@ class App(tk.Tk):
                 maze = Maze(grid)
                 cmdCoords = (self.x.get() + maze.max_x + 5, self.y.get() + 1, self.z.get() + maze.max_y)
                 cmdDirection = (0, -1)
-                generate(maze, coords, cmdCoords, cmdDirection, f"build.mcfunction", **self.optionsFrame.resolve())
+                generate(maze, coords, cmdCoords, cmdDirection, f"build.mcfunction", **self.mazeFrame.resolve())
             
             elif self.puzzleType.get() == "Sound Puzzle":
                 pass

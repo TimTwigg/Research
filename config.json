@@ -5,5 +5,10 @@
         "x": 0,
         "y": -50,
         "z": 0
-    }
+    },
+    "mazeOptions": {
+        "falsePaths": true,
+        "light": true
+    },
+    "soundOptions": {}
 }
