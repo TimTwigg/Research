@@ -39,9 +39,7 @@ class GridReader:
 
         returns: sorted array of points
         '''
-        # points = points[1:-1]
-        # print(points.shape)
-        # points = points.reshape((4, 2, 1))
+        points = points.reshape((len(points), len(points[0][0])))
         npoints = np.zeros((4, 1, 2), dtype=np.int32)
         add = points.sum(1)
         npoints[0] = points[np.argmin(add)]
@@ -95,7 +93,7 @@ class GridReader:
         cv2.waitKey(0)
         # warps perspective to ensure the gridlines are straight as possible
         if biggest.size != 0:
-            print(f'biggest: {biggest}')
+            #print(f'biggest: {biggest}')
             biggest = self.reorder(biggest)
             pts1 = np.float32(biggest)
             pts2 = np.float32([[0, 0], [self.__widthImg, 0], [0, self.__heightImg], [self.__widthImg, self.__heightImg]])
