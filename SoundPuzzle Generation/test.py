@@ -1,6 +1,7 @@
 # code for testing the soundpuzzle generation, this is not part of the main program
 
 import json
+import main
 
 class Tester:
     def __init__(self, path):
@@ -9,9 +10,18 @@ class Tester:
         with(open(path)) as f:
             self.data = json.load(f)
     
-    def getGrid(self):
-        if (self.grid == 0):
-            return self.data["setup"]
-        else:
-            return self.data[str(self.grid)]
-        self.grid += 1
+    def getArrays(self):
+        keys = list(self.data.keys())
+        keys.remove("setup")
+        keys.sort()
+        array = []
+        for x in keys:
+            array.append(self.data[x])
+        return array
+
+    def getSetup(self):
+        return self.data["setup"]
+
+if __name__ == "__main__":
+    tester = Tester("/home/eleros/Projects/Minecraft/research/SoundPuzzle Generation/testdata.json")
+    puzzle = main.SoundPuzzle(tester.getSetup(), tester.getArrays())
