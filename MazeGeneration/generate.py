@@ -1,9 +1,9 @@
-# updated 12 May 2022
+# updated 13 May 2022
 # generate mc commands from Maze
 
-from Maze import Maze, DIR
+from MazeGeneration.Maze import Maze, DIR
 from enum import Enum
-from transform import transform, generateFalsePaths
+from MazeGeneration.transform import transform, generateFalsePaths
 
 def _generateCommands(maze: Maze, coords: tuple[int], cmdCoords: tuple[int], cmdDirection: tuple[int]) -> list[str]:
     assert len(coords) == 3, "Coords must have x, y, and z values"
@@ -123,6 +123,7 @@ def _generateCommandBlocks(maze: Maze, coords: tuple[int], cmdCoords: tuple[int]
     commands.append(f"setblock {cmdX + 2*x_} {cmdY} {cmdZ + 2*z_} chain_command_block[facing={facing}]{{Command: 'tp @a[tag=darkRoom,tag=!admin] {x} {y+1} {z + maze.max_y - 1} -180 0', auto: 1b}} destroy")
     commands.append(f"setblock {cmdX + 3*x_} {cmdY} {cmdZ + 3*z_} chain_command_block[facing={facing}]{{Command: 'setblock {SOUND_SWITCH[0]} {SOUND_SWITCH[1]} {SOUND_SWITCH[2]} redstone_block', auto: 1b}} destroy")
     commands.append(f"setblock {cmdX + 4*x_} {cmdY} {cmdZ + 4*z_} chain_command_block[facing={facing}]{{Command: 'scoreboard objectives setdisplay sidebar darkRoom', auto: 1b}} destroy")
+    commands.append(f"setblock {cmdX + 5*x_} {cmdY} {cmdZ + 5*z_} chain_command_block[facing={facing}]{{Command: 'execute as @a[tag=darkRoom] at @s run effect give @s night vision 9999 9999'}} destroy")
 
     cmdX, cmdZ = cmdX + step[0], cmdZ + step[1]
 

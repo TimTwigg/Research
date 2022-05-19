@@ -2,3 +2,4 @@ __pycache__/
 .vs/
 .mcfunction
 .vscode
+config.json
