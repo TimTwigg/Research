@@ -39,9 +39,8 @@ class GridReader:
 
         returns: sorted array of points
         '''
-        # points = points[1:-1]
-        # print(points.shape)
-        # points = points.reshape((4, 2, 1))
+        print(points.shape)
+        points = points.reshape((4, 2))
         npoints = np.zeros((4, 1, 2), dtype=np.int32)
         add = points.sum(1)
         npoints[0] = points[np.argmin(add)]
