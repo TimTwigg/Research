@@ -1,6 +1,5 @@
 import numpy as np
 import cv2
-from math import floor
 
 class GridReader:
     def __init__(self, image: str, squares_on_side: int):
@@ -40,8 +39,9 @@ class GridReader:
 
         returns: sorted array of points
         '''
-        print(points)
-        points = points.reshape((4, 2))
+        # points = points[1:-1]
+        # print(points.shape)
+        # points = points.reshape((4, 2, 1))
         npoints = np.zeros((4, 1, 2), dtype=np.int32)
         add = points.sum(1)
         npoints[0] = points[np.argmin(add)]
@@ -134,7 +134,7 @@ class GridReader:
 
 if __name__ == '__main__':
     #r = GridReader('grid1red.png', 1y)
-    r = GridReader('opencv_frame_0.png', 11)
+    r = GridReader('opencv_frame_0.png', 18)
     
     print(r.readGrid())
 
