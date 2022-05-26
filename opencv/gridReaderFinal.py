@@ -61,7 +61,7 @@ class GridReader:
         # blurs image slightly
         blur = cv2.GaussianBlur(gray, (5,5), 0)
         # adaptive thresholding                             this digit controls how much gets subtracted
-        thresh = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 13, -6)
+        thresh = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 13, 4)
 
         return thresh
 
@@ -89,8 +89,8 @@ class GridReader:
                     max_area = area
                     biggest = i
             c += 1
-        cv2.imshow('name of the window', thresh)
-        cv2.waitKey(0)
+        #cv2.imshow('name of the window', thresh)
+        #cv2.waitKey(0)
         # warps perspective to ensure the gridlines are straight as possible
         if biggest.size != 0:
             #print(f'biggest: {biggest}')
@@ -108,9 +108,9 @@ class GridReader:
 
         returns: bool, true if red, false if not
         '''
-        if color[0] not in range(0,0):
+        if color[0] not in range(0,90):
             return False
-        if color[1] not in range(64.7, 165):
+        if color[1] not in range(30, 165):
             return False
         if color[2] not in range(100, 257):
             return False
@@ -139,14 +139,17 @@ class GridReader:
 
         returns: 2d array, 0 denoting white, 1 denoting red
         '''
+        spacing = 52
+        offset = -15
         for x in range (1, self.__squares_on_side + 1):
             for y in range (1, self.__squares_on_side + 1):
                 #print(self.__widthImg/ self.__squares_on_side)
-                cv2.circle(self.__warped, (x * 51, y * 51), 5, (0, 255, 0))
-                if self.isFilled(self.__warped[x * 51, y * 51]):
+                #cv2.circle(self.__warped, (x * spacing + offset, y * spacing + offset), 5, (0, 255, 0))
+                #print(x, ",", y,":" , self.__warped[x * spacing + offset, y * spacing + offset])
+                if self.isFilled(self.__warped[x * spacing + offset, y * spacing + offset]):
                     self.__grid[x - 1, y - 1] = 1
-        cv2.imshow('help', self.__warped)
-        cv2.waitKey(0)
+        #cv2.imshow('help', self.__warped)
+        #cv2.waitKey(0)
         return(self.__grid)
 
 if __name__ == '__main__':
