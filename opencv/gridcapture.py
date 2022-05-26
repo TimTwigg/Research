@@ -4,6 +4,7 @@ import cv2
 
 def screenshot():
     '''Returns the path to the captured image.
+    If no image was captured, returns empty string.
     NOTE: Save path changes depending on which directory makes the call to this module.'''
     return_path = ""
     cam = cv2.VideoCapture(0) # THIS LINE WILL CHANGE TO FIT DESIRED CAMERA
