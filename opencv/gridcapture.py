@@ -32,7 +32,7 @@ def screenshot():
                 cv2.imwrite(img_name, frame)
                 print("{} written!".format(img_name))
                 res = gr.GridReader(img_name, 15)
-                print(res.readGrid())
+                print(res.readGrid()) # Return this grid instead
                 return_path = img_name
             
             if cv2.getWindowProperty("test", cv2.WND_PROP_VISIBLE) < 1:
