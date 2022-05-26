@@ -1,6 +1,7 @@
 # https://stackoverflow.com/questions/34588464/python-how-to-capture-image-from-webcam-on-click-using-opencv
 
 import cv2
+import gridReaderFinal as gr
 
 def screenshot():
     '''Returns the path to the captured image.
@@ -30,6 +31,8 @@ def screenshot():
                 img_name = "opencv_frame_0.png" # Same image gets overwritten with every capture. No multiple images
                 cv2.imwrite(img_name, frame)
                 print("{} written!".format(img_name))
+                res = gr.GridReader(img_name, 15)
+                print(res.readGrid())
                 return_path = img_name
             
             if cv2.getWindowProperty("test", cv2.WND_PROP_VISIBLE) < 1:
