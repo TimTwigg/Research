@@ -4,7 +4,7 @@ import cv2
 
 cam = cv2.VideoCapture('/dev/video2')
 
-cv2.namedWindow("test2")
+cv2.namedWindow("test")
 
 img_counter = 0
 
