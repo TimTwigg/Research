@@ -61,7 +61,7 @@ class GridReader:
         # blurs image slightly
         blur = cv2.GaussianBlur(gray, (5,5), 0)
         # adaptive thresholding                             this digit controls how much gets subtracted
-        thresh = cv2.adaptiveThreshold(blur, 255, 1, 1, 13, 10)
+        thresh = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 13, -6)
 
         return thresh
 
@@ -141,8 +141,8 @@ class GridReader:
         '''
         for x in range (1, self.__squares_on_side + 1):
             for y in range (1, self.__squares_on_side + 1):
-                print(self.__widthImg/ self.__squares_on_side)
-                cv2.circle(self.__warped, (((self.__widthImg / self.__squares_on_side) // 1) * x - 25, 52 * y - 25), 2, (255, 175, 125))
+                #print(self.__widthImg/ self.__squares_on_side)
+                #cv2.circle(self.__warped, (((self.__widthImg / self.__squares_on_side) // 1) * x - 25, 52 * y - 25), 2, (255, 175, 125))
                 if self.isFilled(self.__warped[x * 50, y * 50]):
                     self.__grid[x - 1, y - 1] = 1
         cv2.imshow('help', self.__warped)
