@@ -142,8 +142,8 @@ class GridReader:
         for x in range (1, self.__squares_on_side + 1):
             for y in range (1, self.__squares_on_side + 1):
                 #print(self.__widthImg/ self.__squares_on_side)
-                #cv2.circle(self.__warped, (((self.__widthImg / self.__squares_on_side) // 1) * x - 25, 52 * y - 25), 2, (255, 175, 125))
-                if self.isFilled(self.__warped[x * 50, y * 50]):
+                cv2.circle(self.__warped, (x * 51, y * 51), 5, (0, 255, 0))
+                if self.isFilled(self.__warped[x * 51, y * 51]):
                     self.__grid[x - 1, y - 1] = 1
         cv2.imshow('help', self.__warped)
         cv2.waitKey(0)
