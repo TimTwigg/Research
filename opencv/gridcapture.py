@@ -7,7 +7,7 @@ def screenshot():
     If no image was captured, returns empty string.
     NOTE: Save path changes depending on which directory makes the call to this module.'''
     return_path = ""
-    cam = cv2.VideoCapture(0) # THIS LINE WILL CHANGE TO FIT DESIRED CAMERA
+    cam = cv2.VideoCapture(2) # THIS LINE WILL CHANGE TO FIT DESIRED CAMERA
 
     cv2.namedWindow("test")
 

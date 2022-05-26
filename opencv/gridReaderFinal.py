@@ -99,6 +99,22 @@ class GridReader:
             pts2 = np.float32([[0, 0], [self.__widthImg, 0], [0, self.__heightImg], [self.__widthImg, self.__heightImg]])
             matrix = cv2.getPerspectiveTransform(pts1, pts2)
             return cv2.warpPerspective(self.__image, matrix, (self.__widthImg, self.__heightImg))
+    
+    def isFilled(self, color: list[int]) -> bool:
+        '''
+        Checks if provided BGR color is orange or not, then returns true or false.
+
+        color -- a list of 3 ints representing BGR color
+
+        returns: bool, true if red, false if not
+        '''
+        if color[0] not in range(0,0):
+            return False
+        if color[1] not in range(64.7, 165):
+            return False
+        if color[2] not in range(100, 257):
+            return False
+        return True
 
     def isRed(self, color: list[int]) -> bool:
         '''
@@ -127,7 +143,7 @@ class GridReader:
             for y in range (1, self.__squares_on_side + 1):
                 print(self.__widthImg/ self.__squares_on_side)
                 cv2.circle(self.__warped, (((self.__widthImg / self.__squares_on_side) // 1) * x - 25, 52 * y - 25), 2, (255, 175, 125))
-                if self.isRed(self.__warped[x * 50, y * 50]):
+                if self.isFilled(self.__warped[x * 50, y * 50]):
                     self.__grid[x - 1, y - 1] = 1
         cv2.imshow('help', self.__warped)
         cv2.waitKey(0)
@@ -135,6 +151,6 @@ class GridReader:
 
 if __name__ == '__main__':
     #r = GridReader('grid1red.png', 1y)
-    r = GridReader('opencv_frame_0.png', 18)
+    r = GridReader('opencv_frame_0.png', 15)
     print(r.readGrid())
 
