@@ -3,9 +3,10 @@
 import cv2
 
 def screenshot():
-    '''Returns the path to the captured image.'''
+    '''Returns the path to the captured image.
+    NOTE: Save path changes depending on which directory makes the call to this module.'''
     return_path = ""
-    cam = cv2.VideoCapture(0)
+    cam = cv2.VideoCapture(0) # THIS LINE WILL CHANGE TO FIT DESIRED CAMERA
 
     cv2.namedWindow("test")
 
@@ -25,7 +26,7 @@ def screenshot():
                 
             elif k%256 == 32:
                 # SPACE pressed
-                img_name = "opencv_frame_0.png"
+                img_name = "opencv_frame_0.png" # Same image gets overwritten with every capture. No multiple images
                 cv2.imwrite(img_name, frame)
                 print("{} written!".format(img_name))
                 return_path = img_name
