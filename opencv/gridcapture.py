@@ -4,10 +4,10 @@ import cv2
 import gridReaderFinal as gr
 
 def screenshot():
-    '''Returns the path to the captured image.
+    '''Returns the grid from the captured image.
     If no image was captured, returns empty string.
     NOTE: Save path changes depending on which directory makes the call to this module.'''
-    return_path = ""
+    return_grid = ""
     cam = cv2.VideoCapture(2) # THIS LINE WILL CHANGE TO FIT DESIRED CAMERA
 
     cv2.namedWindow("test")
@@ -32,8 +32,8 @@ def screenshot():
                 cv2.imwrite(img_name, frame)
                 print("{} written!".format(img_name))
                 res = gr.GridReader(img_name, 15)
-                print(res.readGrid()) # Return this grid instead
-                return_path = img_name
+                return_grid = res.readGrid()
+                print(return_grid)
             
             if cv2.getWindowProperty("test", cv2.WND_PROP_VISIBLE) < 1:
                 print("User pressed X on the window")
@@ -41,7 +41,7 @@ def screenshot():
 
     cam.release()
     cv2.destroyAllWindows()
-    return return_path
+    return return_grid
 
 if __name__ == "__main__":
     screenshot()
