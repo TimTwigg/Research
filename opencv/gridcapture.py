@@ -31,7 +31,7 @@ def screenshot():
                 img_name = "opencv_frame_0.png" # Same image gets overwritten with every capture. No multiple images
                 cv2.imwrite(img_name, frame)
                 print("{} written!".format(img_name))
-                res = gr.GridReader(img_name, 15)
+                res = gr.GridReader(img_name, 15) # Grid size shouldn't be hardcoded for the future
                 return_grid = res.readGrid()
                 print(return_grid)
             
