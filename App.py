@@ -1,4 +1,4 @@
-# updated 13 May 2022
+# updated 30 May 2022
 # tkinter App allowing user to set config options for challenge generation
 
 ############################################################################
@@ -38,6 +38,7 @@ from pathlib import Path
 
 from MazeGeneration.Maze import Maze
 from MazeGeneration.generate import generate
+from opencv.gridcapture import screenshot
 from opencv.gridReaderFinal import GridReader
 
 class MazeFrame(tk.Frame):
@@ -96,6 +97,7 @@ class App(tk.Tk):
         self.y = tk.IntVar()
         self.z = tk.IntVar()
         self.puzzleType = tk.StringVar()
+        self.photo = tk.BooleanVar()
 
         self.puzzleTypes = ["Maze", "Sound Puzzle"]
 
@@ -138,13 +140,19 @@ class App(tk.Tk):
         combo1.bind("<<ComboboxSelected>>", self._loadframe)
         combo1.grid(row = 3, column = 1)
 
+        # photo selector
+        l5 = tk.Label(self, text = "Take New Image")
+        l5.grid(row = 4, column = 0, sticky = "w")
+        chb = tk.Checkbutton(self, variable = self.photo)
+        chb.grid(row = 4, column = 1)
+
         # config frames - gridded later in _loadframe()
         self.mazeFrame = MazeFrame(self)
         self.soundFrame = SoundFrame(self)
 
         # generate button
         b = tk.Button(self, text = "Generate", command = self.done)
-        b.grid(row = 5, column = 0, columnspan = 2)
+        b.grid(row = 6, column = 0, columnspan = 2)
 
     def _load(self):
         """Load existing config"""
@@ -170,10 +178,10 @@ class App(tk.Tk):
         """Grid the appropriate challenge-dependent frame gui options"""
         if self.puzzleType.get() == "Maze":
             self.soundFrame.grid_forget()
-            self.mazeFrame.grid(row = 4, column = 0, columnspan = 2)
+            self.mazeFrame.grid(row = 5, column = 0, columnspan = 2)
         elif self.puzzleType.get() == "Sound Puzzle":
             self.mazeFrame.grid_forget()
-            self.soundFrame.grid(row = 4, column = 0, columnspan = 2)
+            self.soundFrame.grid(row = 5, column = 0, columnspan = 2)
 
     def _validate(self, prevStr, inStr, actTyp):
         """Validation function to allow only negative sign and numeric values"""
@@ -243,14 +251,19 @@ class App(tk.Tk):
         self._generate()
     
     def _generate(self):
-        """Call generate function and move mcfunction file"""
+        """Call generate function (and move mcfunction file # this is probably deprecated)"""
 
-        # TODO: read matrix from GridReader rather than file
-        with open("data.json", "r") as f:
-            grid = json.loads(f.read())["maze"]
+        size = 15
 
-        #gr = GridReader()
-        #grid = gr.readGrid()
+        if self.photo.get():
+            grid = screenshot()
+        else:
+            gr = GridReader("opencv\\opencv_frame_0.png", size)
+            grid = gr.readGrid()
+
+        if type(grid) is str or len(grid) != size:
+            messagebox.showerror("Grid Capture", "Grid was not captured correctly")
+            return
 
         coords = (self.x.get(), self.y.get(), self.z.get())
 

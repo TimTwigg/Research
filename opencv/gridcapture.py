@@ -1,7 +1,7 @@
 # https://stackoverflow.com/questions/34588464/python-how-to-capture-image-from-webcam-on-click-using-opencv
 
 import cv2
-import gridReaderFinal as gr
+import opencv.gridReaderFinal as gr
 
 def screenshot():
     '''Returns the grid from the captured image.
@@ -14,7 +14,7 @@ def screenshot():
 
     ret, frame = cam.read()
     if not ret:
-        print("failed to grab frame")
+        print("Failed to grab frame: Camera not found")
     else:
         while True:
             ret, frame = cam.read()
