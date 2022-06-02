@@ -1,4 +1,4 @@
-# updated 30 May 2022
+# updated 2 June 2022
 # tkinter App allowing user to set config options for challenge generation
 
 ############################################################################
