@@ -1,7 +1,7 @@
 # code for testing the soundpuzzle generation, this is not part of the main program
 
 import json
-import main
+import spg
 
 class Tester:
     def __init__(self, path):
@@ -24,4 +24,4 @@ class Tester:
 
 if __name__ == "__main__":
     tester = Tester("/home/eleros/Projects/Minecraft/research/SoundPuzzle Generation/testdata.json")
-    puzzle = main.SoundPuzzle(tester.getSetup(), tester.getArrays())
+    puzzle = spg.SoundPuzzle(tester.getSetup(), tester.getArrays())

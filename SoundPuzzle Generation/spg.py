@@ -1,4 +1,4 @@
-# main stuff
+# sound puzzle generation
 
 from collections import namedtuple
 
