@@ -12,7 +12,7 @@ class SoundPuzzle:
         self.num = self.getNum(num)
         self.arrays = arrays
         self.sounds = self.getSounds()
-        self.printSounds()
+        #self.printSounds()
 
     def getNum(self,array):
         for i in range(0,len(array)):
@@ -44,3 +44,13 @@ class SoundPuzzle:
             s = Sound(SOUNDNAMES[col],self.getPitch(row))
             arr.append(s)
         return arr
+
+def generateSP(puzzle: SoundPuzzle, coords: tuple[int]):
+    #print("SoundPuzzle Generation")
+    #print("Number of sounds: ", puzzle.num)
+    #print("Sounds:")
+    #puzzle.printSounds()
+    assert len(coords) == 3, "Coords must have x, y, z values"
+
+    x, y, z = coords
+    commands = []

@@ -25,3 +25,4 @@ class Tester:
 if __name__ == "__main__":
     tester = Tester("/home/eleros/Projects/Minecraft/research/SoundPuzzle Generation/testdata.json")
     puzzle = spg.SoundPuzzle(tester.getSetup(), tester.getArrays())
+    spg.generateSP(puzzle, (50,-50,50))
