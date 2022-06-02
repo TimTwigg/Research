@@ -3,12 +3,12 @@
 import cv2
 import opencv.gridReaderFinal as gr
 
-def screenshot():
+def screenshot(size: int):
     '''Returns the grid from the captured image.
     If no image was captured, returns empty string.
     NOTE: Save path changes depending on which directory makes the call to this module.'''
     return_grid = ""
-    cam = cv2.VideoCapture(2) # THIS LINE WILL CHANGE TO FIT DESIRED CAMERA
+    cam = cv2.VideoCapture(1) # THIS LINE WILL CHANGE TO FIT DESIRED CAMERA
 
     cv2.namedWindow("test")
 
@@ -31,7 +31,7 @@ def screenshot():
                 img_name = "opencv_frame_0.png" # Same image gets overwritten with every capture. No multiple images
                 cv2.imwrite(img_name, frame)
                 print("{} written!".format(img_name))
-                res = gr.GridReader(img_name, 15) # Grid size shouldn't be hardcoded for the future
+                res = gr.GridReader(img_name, size) # Grid size shouldn't be hardcoded for the future
                 return_grid = res.readGrid()
                 print(return_grid)
             

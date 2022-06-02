@@ -256,9 +256,9 @@ class App(tk.Tk):
         size = 15
 
         if self.photo.get():
-            grid = screenshot()
+            grid = screenshot(size)
         else:
-            gr = GridReader("opencv\\opencv_frame_0.png", size)
+            gr = GridReader("opencv_frame_0.png", size)
             grid = gr.readGrid()
 
         if type(grid) is str or len(grid) != size:
@@ -284,4 +284,6 @@ class App(tk.Tk):
         except AssertionError:
             messagebox.showerror("Maze Generation", "Maze generation threw error: " + sys.exc_info()[1].args[0])
             return
+        
+        print("Complete")
         sys.exit()
