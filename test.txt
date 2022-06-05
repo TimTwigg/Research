@@ -1,0 +1,2 @@
+setblock 20 -49 23 chain_command_block[facing=south]{Command: 'execute as @a[tag=darkRoom,tag=!admin,scores={darkRoom=6}] run setblock 24 -49 19 redstone_block', auto: 1b} destroy
+setblock 20 -49 24 chain_command_block[facing=south]{Command: 'execute as @a[tag=!falsePath,tag=!admin,tag=darkRoom] at @s if block ~ ~-1 ~ black_wool run setblock 28 -49 19 redstone_block', auto: 1b} destroy
