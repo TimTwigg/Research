@@ -1,4 +1,4 @@
-# updated 2 June 2022
+# updated 5 June 2022
 # tkinter App allowing user to set config options for challenge generation
 
 ############################################################################
@@ -35,11 +35,13 @@ import sys
 import json
 import shutil
 from pathlib import Path
+import subprocess
 
 from MazeGeneration.Maze import Maze
 from MazeGeneration.generate import generate
 from opencv.gridcapture import screenshot
 from opencv.gridReaderFinal import GridReader
+from runCommands.refocus import setFocus
 
 class MazeFrame(tk.Frame):
     """Frame containing maze-specific config options"""
@@ -280,6 +282,9 @@ class App(tk.Tk):
             # move the mcfunction file into the world datapack files
             #self._make_path()
             #shutil.move(self._sourcePath(), self._functionPath() + f"\\build.mcfunction")
+
+            setFocus(".*Notepad.*") # change this to ".*Minecraft.*"
+            subprocess.call(["runCommands\\runCommands.exe", "build.mcfunction"])
         
         except AssertionError:
             messagebox.showerror("Maze Generation", "Maze generation threw error: " + sys.exc_info()[1].args[0])

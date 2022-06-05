@@ -1,6 +1,7 @@
-# updated 2 June 2022
+# updated 5 June 2022
 
 import win32gui
+import win32con
 import re
 
 #https://stackoverflow.com/questions/2090464/python-window-activation
@@ -28,9 +29,15 @@ class WindowMgr:
 
     def set_foreground(self):
         """put the window in the foreground"""
+        win32gui.ShowWindow(self._handle, win32con.SW_SHOWNORMAL) # can use win32con.SW_MAXIMIZE to bring it up and maximize it
         win32gui.SetForegroundWindow(self._handle)
 
+def setFocus(wildcard: str) -> None:
+    w = WindowMgr()
+    w.find_window_wildcard(wildcard)
+    w.set_foreground()
 
-w = WindowMgr()
-w.find_window_wildcard(".*Discord.*")
-w.set_foreground()
+if __name__ == "__main__":
+    w = WindowMgr()
+    w.find_window_wildcard(".*Notepad.*")
+    w.set_foreground()
