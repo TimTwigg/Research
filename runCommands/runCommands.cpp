@@ -1,4 +1,4 @@
-// updated 5 June 2022
+// updated 6 June 2022
 // C++ module to run commands by simulating keyboard input
 
 #include <string>
@@ -6,33 +6,34 @@
 #include <iostream>
 #include <fstream>
 #include <map>
+#include <vector>
+#include <cassert>
 #include <time.h>
 
-bool write(char c) {
-    // Sam's answer at
+void append(char c, std::vector<INPUT>& v) {
+    // Adapted from Sam's answer at
     // https://stackoverflow.com/questions/2167156/sendinput-isnt-sending-the-correct-shifted-characters
     
-    INPUT input[ 2 ];
+    INPUT input;
+    input.type = INPUT_KEYBOARD;
+    input.ki.wVk = 0;
+    input.ki.wScan = c;
+    input.ki.dwFlags = KEYEVENTF_UNICODE;
+    input.ki.time = 0;
+    input.ki.dwExtraInfo = 0;
+    v.push_back(input);
 
-    input[0].type = INPUT_KEYBOARD;
-    input[0].ki.wVk = 0;
-    input[0].ki.wScan = c;
-    input[0].ki.dwFlags = KEYEVENTF_UNICODE;
-    input[0].ki.time = 0;
-    input[0].ki.dwExtraInfo = 0;
-
-    input[1].type = INPUT_KEYBOARD;
-    input[1].ki.wVk = 0;
-    input[1].ki.wScan = c;
-    input[1].ki.dwFlags = KEYEVENTF_UNICODE | KEYEVENTF_KEYUP;
-    input[1].ki.time = 0;
-    input[1].ki.dwExtraInfo = 0;
-
-    SendInput(2, input, sizeof(INPUT));
-    return true;
+    INPUT input2;
+    input2.type = INPUT_KEYBOARD;
+    input2.ki.wVk = 0;
+    input2.ki.wScan = c;
+    input2.ki.dwFlags = KEYEVENTF_UNICODE | KEYEVENTF_KEYUP;
+    input2.ki.time = 0;
+    input2.ki.dwExtraInfo = 0;
+    v.push_back(input2);
 }
 
-void enter() {
+void enter(std::vector<INPUT>& v) {
     INPUT ip;
     ip.type = INPUT_KEYBOARD;
     ip.ki.time = 0;
@@ -40,7 +41,7 @@ void enter() {
     ip.ki.wScan = VK_RETURN;
     ip.ki.wVk = 0;
     ip.ki.dwExtraInfo = 0;
-    SendInput(1, &ip, sizeof(INPUT));
+    v.push_back(ip);
 }
 
 // run by calling exe with single arg of the filename to run
@@ -57,23 +58,20 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    Sleep(2000);
-
     while (in) {
+        std::vector<INPUT> v;
         std::string command;
         std::getline(in, command);
         if (command.size() < 1) break;
 
-        // this method of writing individual characters is reliable (with the sleep) but slow
-        write('\\');
+        append('/', v);
         for (char c : command) {
-            write(c);
-            Sleep(1); // without this is works nicely for a while then goes mad
+            append(c, v);
         }
-        enter();
+        enter(v);
+        SendInput(v.size(), v.data(), sizeof(INPUT));
+        Sleep(50);
     }
-
-    std::cout << "complete" << std::endl;
 
     return 0;
 }

@@ -283,7 +283,7 @@ class App(tk.Tk):
             #self._make_path()
             #shutil.move(self._sourcePath(), self._functionPath() + f"\\build.mcfunction")
 
-            setFocus(".*Notepad.*") # change this to ".*Minecraft.*"
+            setFocus(".*Notepad.*")
             subprocess.call(["runCommands\\runCommands.exe", "build.mcfunction"])
         
         except AssertionError:

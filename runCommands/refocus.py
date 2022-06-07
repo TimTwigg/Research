@@ -29,7 +29,7 @@ class WindowMgr:
 
     def set_foreground(self):
         """put the window in the foreground"""
-        win32gui.ShowWindow(self._handle, win32con.SW_SHOWNORMAL) # can use win32con.SW_MAXIMIZE to bring it up and maximize it
+        win32gui.ShowWindow(self._handle, win32con.SW_SHOW) # can use win32con.SW_MAXIMIZE to bring it up and maximize it
         win32gui.SetForegroundWindow(self._handle)
 
 def setFocus(wildcard: str) -> None:
@@ -39,5 +39,5 @@ def setFocus(wildcard: str) -> None:
 
 if __name__ == "__main__":
     w = WindowMgr()
-    w.find_window_wildcard(".*Notepad.*")
+    w.find_window_wildcard(".*Minecraft.*")
     w.set_foreground()
