@@ -1,4 +1,4 @@
-// updated 6 June 2022
+// updated 14 June 2022
 // C++ module to run commands by simulating keyboard input
 
 #include <string>
@@ -9,6 +9,18 @@
 #include <vector>
 #include <cassert>
 #include <time.h>
+
+#ifndef ESCAPE
+#define ESCAPE 0x01
+#endif
+
+#ifndef ENTER
+#define ENTER 0x1c
+#endif
+
+#ifndef SLASH
+#define SLASH 0x35
+#endif
 
 void append(char c, std::vector<INPUT>& v) {
     // Adapted from Sam's answer at
@@ -33,15 +45,19 @@ void append(char c, std::vector<INPUT>& v) {
     v.push_back(input2);
 }
 
-void enter(std::vector<INPUT>& v) {
-    INPUT ip;
-    ip.type = INPUT_KEYBOARD;
-    ip.ki.time = 0;
-    ip.ki.dwFlags = KEYEVENTF_UNICODE;
-    ip.ki.wScan = VK_RETURN;
-    ip.ki.wVk = 0;
-    ip.ki.dwExtraInfo = 0;
-    v.push_back(ip);
+void press(int code) {
+    INPUT KEY_B;
+
+	KEY_B.type = INPUT_KEYBOARD;
+	KEY_B.ki.time = 0;
+	KEY_B.ki.wVk = 0;
+	KEY_B.ki.dwExtraInfo = 0;
+	KEY_B.ki.dwFlags = KEYEVENTF_SCANCODE;
+	KEY_B.ki.wScan = code;
+
+	SendInput(1, &KEY_B, sizeof(INPUT));
+	KEY_B.ki.dwFlags = KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP;
+	SendInput(1, &KEY_B, sizeof(INPUT));
 }
 
 // run by calling exe with single arg of the filename to run
@@ -58,19 +74,23 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    // assumes the minecraft is loaded into the world, with escape then pressed to focus another app
+    press(ESCAPE);
+
     while (in) {
         std::vector<INPUT> v;
         std::string command;
         std::getline(in, command);
         if (command.size() < 1) break;
 
-        append('/', v);
+        press(SLASH);
+        Sleep(50);
         for (char c : command) {
             append(c, v);
         }
-        enter(v);
         SendInput(v.size(), v.data(), sizeof(INPUT));
-        Sleep(50);
+        //Sleep(50);
+        press(ENTER);
     }
 
     return 0;

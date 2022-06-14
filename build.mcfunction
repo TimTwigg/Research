@@ -8,10 +8,10 @@ setblock 20 -49 13 chain_command_block[facing=north]{Command: 'execute as @a[tag
 setblock 20 -49 12 chain_command_block[facing=north]{Command: 'execute as @a[tag=darkRoomTemp, scores={darkRoom=4}] at @s run playsound block.note_block.banjo hostile @s ~0 ~ ~-5', auto: 1b} destroy
 setblock 20 -49 11 chain_command_block[facing=north]{Command: 'execute as @a[tag=darkRoomTemp, scores={darkRoom=5}] at @s run playsound block.note_block.banjo hostile @s ~5 ~ ~0', auto: 1b} destroy
 setblock 20 -49 18 repeating_command_block[facing=south] destroy
-setblock 20 -49 19 chain_command_block[facing=south]{Command: 'execute as @a[tag=!darkRoomTemp] at @s if block ~ ~-1 ~ coal_block run scoreboard players add @s darkRoom 1', auto: 1b} destroy
-setblock 20 -49 20 chain_command_block[facing=south]{Command: 'execute as @a[tag=!darkRoomTemp] at @s if block ~ ~-1 ~ coal_block run tag @s add darkRoomTemp', auto: 1b} destroy
-setblock 20 -49 21 chain_command_block[facing=south]{Command: 'execute as @a[tag=darkRoomTemp] at @s unless block ~ ~-1 ~ coal_block run tag @s remove darkRoomTemp', auto: 1b} destroy
-setblock 20 -49 22 chain_command_block[facing=south]{Command: 'execute as @a[tag=darkRoomTemp] at @s run setblock ~ ~-1 ~ black_concrete', auto: 1b} destroy
+setblock 20 -49 19 chain_command_block[facing=south]{Command: 'execute as @a[tag=!darkRoomTemp] at @s if block ~ ~-1 ~ diorite run scoreboard players add @s darkRoom 1', auto: 1b} destroy
+setblock 20 -49 20 chain_command_block[facing=south]{Command: 'execute as @a[tag=!darkRoomTemp] at @s if block ~ ~-1 ~ diorite run tag @s add darkRoomTemp', auto: 1b} destroy
+setblock 20 -49 21 chain_command_block[facing=south]{Command: 'execute as @a[tag=darkRoomTemp] at @s unless block ~ ~-1 ~ diorite run tag @s remove darkRoomTemp', auto: 1b} destroy
+setblock 20 -49 22 chain_command_block[facing=south]{Command: 'execute as @a[tag=darkRoomTemp] at @s run setblock ~ ~-1 ~ white_concrete', auto: 1b} destroy
 setblock 20 -49 25 chain_command_block[facing=south]{Command: 'execute as @a[tag=!falsePath,tag=!admin,tag=darkRoom] at @s if block ~ ~-1 ~ black_wool run tag @s add falsePath', auto: 1b} destroy
 setblock 20 -49 26 chain_command_block[facing=south]{Command: 'execute as @a[tag=falsePath] at @s unless block ~ ~-1 ~ black_wool run tag @s remove falsePath', auto: 1b} destroy
 setblock 22 -49 18 command_block[facing=north] destroy
@@ -39,7 +39,7 @@ setblock 28 -49 13 chain_command_block[facing=north]{Command: 'scoreboard player
 setblock 24 -49 11 chain_command_block[facing=north]{Command: 'setblock 26 -49 19 redstone_block', auto: 1b} destroy
 setblock 20 -49 23 chain_command_block[facing=south]{Command: 'execute as @a[tag=darkRoom,tag=!admin,scores={darkRoom=6}] run setblock 24 -49 19 redstone_block', auto: 1b} destroy
 setblock 20 -49 24 chain_command_block[facing=south]{Command: 'execute as @a[tag=!falsePath,tag=!admin,tag=darkRoom] at @s if block ~ ~-1 ~ black_wool run setblock 28 -49 19 redstone_block', auto: 1b} destroy
-fill -1 -50 -1 15 -47 15 black_concrete
+fill -1 -50 -1 15 -47 15 white_concrete
 fill 0 -49 0 0 -48 0 air
 fill 1 -49 0 1 -48 0 air
 fill 2 -49 0 2 -48 0 air
@@ -157,7 +157,7 @@ fill 4 -49 8 4 -48 8 air
 setblock 4 -50 8 black_wool
 fill 5 -49 8 5 -48 8 air
 fill 6 -49 8 6 -48 8 air
-setblock 6 -50 8 coal_block
+setblock 6 -50 8 diorite
 fill 8 -49 8 8 -48 8 air
 setblock 8 -50 8 black_wool
 fill 9 -49 8 9 -48 8 air
@@ -172,7 +172,7 @@ fill 0 -49 9 0 -48 9 air
 setblock 0 -50 9 black_wool
 fill 2 -49 9 2 -48 9 air
 fill 5 -49 9 5 -48 9 air
-setblock 5 -50 9 coal_block
+setblock 5 -50 9 diorite
 fill 7 -49 9 7 -48 9 air
 setblock 7 -50 9 black_wool
 fill 9 -49 9 9 -48 9 air
@@ -184,7 +184,7 @@ setblock 1 -50 10 black_wool
 fill 2 -49 10 2 -48 10 air
 fill 3 -49 10 3 -48 10 air
 fill 4 -49 10 4 -48 10 air
-setblock 4 -50 10 coal_block
+setblock 4 -50 10 diorite
 fill 5 -49 10 5 -48 10 air
 fill 6 -49 10 6 -48 10 air
 fill 7 -49 10 7 -48 10 air
@@ -198,7 +198,7 @@ fill 14 -49 10 14 -48 10 air
 fill 0 -49 11 0 -48 11 air
 setblock 0 -50 11 black_wool
 fill 2 -49 11 2 -48 11 air
-setblock 2 -50 11 coal_block
+setblock 2 -50 11 diorite
 fill 4 -49 11 4 -48 11 air
 setblock 4 -50 11 black_wool
 fill 6 -49 11 6 -48 11 air
@@ -210,7 +210,7 @@ setblock 12 -50 11 black_wool
 fill 14 -49 11 14 -48 11 air
 fill 0 -49 12 0 -48 12 air
 fill 1 -49 12 1 -48 12 air
-setblock 1 -50 12 coal_block
+setblock 1 -50 12 diorite
 fill 2 -49 12 2 -48 12 air
 fill 3 -49 12 3 -48 12 air
 setblock 3 -50 12 black_wool
@@ -228,7 +228,7 @@ fill 13 -49 12 13 -48 12 air
 setblock 13 -50 12 black_wool
 fill 14 -49 12 14 -48 12 air
 fill 0 -49 13 0 -48 13 air
-setblock 0 -50 13 coal_block
+setblock 0 -50 13 diorite
 fill 2 -49 13 2 -48 13 air
 fill 4 -49 13 4 -48 13 air
 setblock 4 -50 13 black_wool
