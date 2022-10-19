@@ -1,5 +1,8 @@
 fill -3 -52 -3 29 -42 27 air
 gamerule doDaylightCycle false
+gamerule commandBlockOutput false
+gamerule doWeatherCycle false
+gamerule doTraderSpawning false
 scoreboard objectives add darkRoom dummy
 setblock 20 -49 16 repeating_command_block[facing=north] destroy
 setblock 20 -49 15 chain_command_block[facing=north]{Command: 'execute as @a[tag=darkRoomTemp, scores={darkRoom=1}] at @s run playsound block.note_block.banjo hostile @s ~5 ~ ~0', auto: 1b} destroy
@@ -19,7 +22,7 @@ setblock 22 -49 17 chain_command_block[facing=north]{Command: 'setblock ~0 ~ ~2 
 setblock 22 -49 16 chain_command_block[facing=north]{Command: 'tp @a[tag=darkRoom,tag=!admin] 0 -49 14 -180 0', auto: 1b} destroy
 setblock 22 -49 15 chain_command_block[facing=north]{Command: 'setblock 20 -49 17 redstone_block', auto: 1b} destroy
 setblock 22 -49 14 chain_command_block[facing=north]{Command: 'scoreboard objectives setdisplay sidebar darkRoom', auto: 1b} destroy
-setblock 22 -49 13 chain_command_block[facing=north]{Command: 'execute as @a[tag=darkRoom] at @s run effect give @s night vision 9999 9999'} destroy
+setblock 22 -49 13 chain_command_block[facing=north]{Command: 'execute as @a[tag=darkRoom] at @s run effect give @s night_vision 9999 99', auto: 1b} destroy
 setblock 24 -49 18 command_block[facing=north] destroy
 setblock 24 -49 17 chain_command_block[facing=north]{Command: 'setblock ~0 ~ ~2 air', auto: 1b} destroy
 setblock 24 -49 16 chain_command_block[facing=north]{Command: 'setblock 20 -49 17 air', auto: 1b} destroy
