@@ -1,4 +1,4 @@
-# updated 13 May 2022
+# updated 14 June 2022
 # generate mc commands from Maze
 
 from MazeGeneration.Maze import Maze, DIR
@@ -123,7 +123,7 @@ def _generateCommandBlocks(maze: Maze, coords: tuple[int], cmdCoords: tuple[int]
     commands.append(f"setblock {cmdX + 2*x_} {cmdY} {cmdZ + 2*z_} chain_command_block[facing={facing}]{{Command: 'tp @a[tag=darkRoom,tag=!admin] {x} {y+1} {z + maze.max_y - 1} -180 0', auto: 1b}} destroy")
     commands.append(f"setblock {cmdX + 3*x_} {cmdY} {cmdZ + 3*z_} chain_command_block[facing={facing}]{{Command: 'setblock {SOUND_SWITCH[0]} {SOUND_SWITCH[1]} {SOUND_SWITCH[2]} redstone_block', auto: 1b}} destroy")
     commands.append(f"setblock {cmdX + 4*x_} {cmdY} {cmdZ + 4*z_} chain_command_block[facing={facing}]{{Command: 'scoreboard objectives setdisplay sidebar darkRoom', auto: 1b}} destroy")
-    commands.append(f"setblock {cmdX + 5*x_} {cmdY} {cmdZ + 5*z_} chain_command_block[facing={facing}]{{Command: 'execute as @a[tag=darkRoom] at @s run effect give @s night vision 9999 9999'}} destroy")
+    commands.append(f"setblock {cmdX + 5*x_} {cmdY} {cmdZ + 5*z_} chain_command_block[facing={facing}]{{Command: 'execute as @a[tag=darkRoom] at @s run effect give @s night_vision 9999 99', auto: 1b}} destroy")
 
     cmdX, cmdZ = cmdX + step[0], cmdZ + step[1]
 
@@ -227,7 +227,10 @@ def generate(maze: Maze, coords: tuple[int], cmdCoords: tuple[int], cmdDirection
     commands = []
     x, y, z = coords
     commands.append(f"fill {x-3} {y-2} {z-3} {x + maze.max_x + 14} {y+8} {z+ maze.max_y + 12} air")
-    commands.append("gamerule doDaylightCycle false")   
+    commands.append("gamerule doDaylightCycle false")
+    commands.append("gamerule commandBlockOutput false")
+    commands.append("gamerule doWeatherCycle false")
+    commands.append("gamerule doTraderSpawning false")
     commands += _generateCommandBlocks(maze, coords, cmdCoords, cmdDirection)
     if falsePaths:
         maze = generateFalsePaths(maze)
