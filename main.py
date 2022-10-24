@@ -1,6 +1,7 @@
-# updated 2 June 2022
+# updated 23 October 2022
 
 from App import App
 
 if __name__ == "__main__":
-    app = App()
+    #app = App() # we're not using the gui anymore
+    pass
