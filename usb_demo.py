@@ -2,7 +2,7 @@
 
 # pip install PyUSB
 
-from numpy import byte
+#from numpy import byte
 import usb.core
 import usb.util
 
@@ -31,9 +31,9 @@ def start():
     except Exception as e:
         print('reset', e)
 
-    if dev.is_kernel_driver_active(0):
-        print('detaching kernel driver')
-        dev.detach_kernel_driver(0)
+    #if dev.is_kernel_driver_active(0):
+    #    print('detaching kernel driver')
+    #    dev.detach_kernel_driver(0)
 
     listen(dev, endpoint_in, endpoint_out)
     #send command to teensy
