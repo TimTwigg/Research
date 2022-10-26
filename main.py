@@ -1,7 +1,7 @@
-# updated 23 October 2022
+# updated 26 October 2022
 
 from App import App
+import usb_demo
 
 if __name__ == "__main__":
-    #app = App() # we're not using the gui anymore
-    pass
+    usb_demo.main()
