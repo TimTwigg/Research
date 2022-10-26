@@ -1,4 +1,4 @@
-# updated 14 June 2022
+# updated 23 October 2022
 # generate mc commands from Maze
 
 from MazeGeneration.Maze import Maze, DIR
@@ -187,7 +187,7 @@ def _findDirection(maze: Maze, x: int, z: int, visited: list[int]) -> tuple[int]
 def generate(maze: Maze, coords: tuple[int], cmdCoords: tuple[int], cmdDirection: tuple[int], filename: str,
         light: bool = False, falsePaths: bool = True) -> None:
     """
-    Generates the commands required to create the given maze and prints them to a file.
+    Generates the commands required to create the given maze and returns a list of strings.
     Start of maze must be in lower left hand corner of maze (as seen in 2D)
     \n
     params:\n
@@ -195,7 +195,6 @@ def generate(maze: Maze, coords: tuple[int], cmdCoords: tuple[int], cmdDirection
         coords :: tuple(x, y, z) North-Western corner of maze (an extra ring of wall will be constructed around the maze)\n
         cmdCoords :: tuple(x, y, z) Position of first block in command block chain\n
         cmdDirection :: tuple(x, z) Direction of command block chain from first block\n
-        filename :: str filename to print commands to\n
         light :: bool, change to light mode, default false\n
         falsePaths :: bool, generate false paths, default true
     """
@@ -235,5 +234,5 @@ def generate(maze: Maze, coords: tuple[int], cmdCoords: tuple[int], cmdDirection
     if falsePaths:
         maze = generateFalsePaths(maze)
     commands += _generateCommands(maze, coords, cmdCoords, cmdDirection)
-    with open(filename, "w") as f:
-        f.write("\n".join(commands))
+    
+    return commands
