@@ -5,7 +5,7 @@
 
 void sendToHost(int mode);
 void readHid();
-void buttonCheck(int reading, int mode);
+void buttonCheck(int reading, int mode, int& buttonState, int& lastButtonState, unsigned long& lastDebounceTime);
 
 byte buffer[64];
 char tag[1] = {1}; //ask about this
@@ -14,12 +14,15 @@ const int ledPin = 13;
 const int mazePin = 7;
 const int soundPin = 6;
 
-int buttonState;            // the current reading from the input pin
-int lastButtonState = LOW;  // the previous reading from the input pin
+int mazeButtonState;            // the current reading from the input pin
+int soundButtonState;            // the current reading from the input pin
+int mazeLastButtonState = LOW;  // the previous reading from the input pin
+int soundLastButtonState = LOW;  // the previous reading from the input pin
 
 // the following variables are unsigned longs because the time, measured in
 // milliseconds, will quickly become a bigger number than can be stored in an int.
-unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
+unsigned long mazeLastDebounceTime = 0;  // the last time the output pin was toggled
+unsigned long soundLastDebounceTime = 0;  // the last time the output pin was toggled
 unsigned long debounceDelay = 50;    // the debounce time; increase if the output flickers
 
 void setup() {
@@ -28,13 +31,14 @@ void setup() {
     pinMode(soundPin, INPUT);
     Serial.begin(9600);
   // put your setup code here, to run once:
+    Serial.println("ready");
 }
 
 void loop() {
   int mazeReading = digitalRead(mazePin);
   int soundReading = digitalRead(soundPin);
-  buttonCheck(mazeReading, 1);
-  buttonCheck(soundReading, 2);
+  buttonCheck(mazeReading, 1, mazeButtonState, mazeLastButtonState, mazeLastDebounceTime);
+  buttonCheck(soundReading, 2, soundButtonState, soundLastButtonState, soundLastDebounceTime);
 }
 
 void sendToHost(int mode){
@@ -60,7 +64,7 @@ void readHid(){
 	}
 }
 
-void buttonCheck(int reading, int mode){
+void buttonCheck(int reading, int mode, int& buttonState, int& lastButtonState, unsigned long& lastDebounceTime){
   // check to see if you just pressed the button
   // (i.e. the input went from LOW to HIGH), and you've waited long enough
   // since the last press to ignore any noise:

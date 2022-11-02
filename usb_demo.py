@@ -31,14 +31,14 @@ def start():
     except Exception as e:
         print('reset', e)
 
-    #if dev.is_kernel_driver_active(0):
-    #    print('detaching kernel driver')
-    #    dev.detach_kernel_driver(0)
+    if dev.is_kernel_driver_active(0):
+        print('detaching kernel driver')
+        dev.detach_kernel_driver(0)
 
     listen(dev, endpoint_in, endpoint_out)
     #send command to teensy
 
-    #endpoint_out.write("version".encode() + bytes([0]))
+    endpoint_out.write("version".encode() + bytes([0]))
 
 def main():
     try:
