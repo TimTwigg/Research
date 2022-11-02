@@ -5,13 +5,14 @@
 
 void sendToHost(int mode);
 void readHid();
-void sentToHost();
+void buttonCheck(int reading, int mode);
 
 byte buffer[64];
-char tag[1] = {1};
+char tag[1] = {1}; //ask about this
 
 const int ledPin = 13;
-const int btn1Pin = 7;
+const int mazePin = 7;
+const int soundPin = 6;
 
 int buttonState;            // the current reading from the input pin
 int lastButtonState = LOW;  // the previous reading from the input pin
@@ -23,44 +24,17 @@ unsigned long debounceDelay = 50;    // the debounce time; increase if the outpu
 
 void setup() {
     pinMode(ledPin, OUTPUT);
-    pinMode(btn1Pin, INPUT);
+    pinMode(mazePin, INPUT);
+    pinMode(soundPin, INPUT);
     Serial.begin(9600);
   // put your setup code here, to run once:
 }
 
 void loop() {
-  int reading = digitalRead(btn1Pin);
-
-  // check to see if you just pressed the button
-  // (i.e. the input went from LOW to HIGH), and you've waited long enough
-  // since the last press to ignore any noise:
-
-  // If the switch changed, due to noise or pressing:
-  if (reading != lastButtonState) {
-    // reset the debouncing timer
-    lastDebounceTime = millis();
-  }
-
-  if ((millis() - lastDebounceTime) > debounceDelay) {
-    // whatever the reading is at, it's been there for longer than the debounce
-    // delay, so take it as the actual current state:
-
-    // if the button state has changed:
-    if (reading != buttonState) {
-      buttonState = reading;
-
-      // only toggle the LED if the new button state is HIGH
-      if (buttonState == HIGH) {
-        // set the LED:
-        sendToHost(1);
-      }
-      digitalWrite(ledPin, buttonState);
-    }
-  }
-
-
-  // save the reading. Next time through the loop, it'll be the lastButtonState:
-  lastButtonState = reading;
+  int mazeReading = digitalRead(mazePin);
+  int soundReading = digitalRead(soundPin);
+  //buttonCheck(mazeReading, 1);
+  buttonCheck(soundReading, 2);
 }
 
 void sendToHost(int mode){
@@ -84,4 +58,36 @@ void readHid(){
 	if(result > 0){
         Serial.print(result);
 	}
+}
+
+void buttonCheck(int reading, int mode){
+  // check to see if you just pressed the button
+  // (i.e. the input went from LOW to HIGH), and you've waited long enough
+  // since the last press to ignore any noise:
+
+  // If the switch changed, due to noise or pressing:
+  if (reading != lastButtonState) {
+    // reset the debouncing timer
+    lastDebounceTime = millis();
+  }
+
+  if ((millis() - lastDebounceTime) > debounceDelay) {
+    // whatever the reading is at, it's been there for longer than the debounce
+    // delay, so take it as the actual current state:
+
+    // if the button state has changed:
+    if (reading != buttonState) {
+      buttonState = reading;
+
+      // only toggle the LED if the new button state is HIGH
+      if (buttonState == HIGH) {
+        // set the LED:
+        sendToHost(mode);
+      }
+      digitalWrite(ledPin, buttonState);
+    }
+  }
+
+  // save the reading. Next time through the loop, it'll be the lastButtonState:
+  lastButtonState = reading; //might have to accommodate diff last states for diff buttons
 }

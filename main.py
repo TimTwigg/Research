@@ -11,11 +11,15 @@ def listen(dev, endpoint_in, endpoint_out):
         try:
             buf = dev.read(endpoint_in.bEndpointAddress,64,1000)
             buf = bytearray(buf)
+            print(buf)
             code = buf[1]
             if code == 0:
                 continue
             elif code == 1:
                 app.callMaze()
+            elif code == 2:
+                print("here!")
+                app.callSound()
         except usb.core.USBTimeoutError as e:
             pass
 
