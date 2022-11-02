@@ -33,7 +33,7 @@ void setup() {
 void loop() {
   int mazeReading = digitalRead(mazePin);
   int soundReading = digitalRead(soundPin);
-  //buttonCheck(mazeReading, 1);
+  buttonCheck(mazeReading, 1);
   buttonCheck(soundReading, 2);
 }
 
