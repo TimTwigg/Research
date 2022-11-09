@@ -2,7 +2,7 @@
 
 # pip install PyUSB
 
-from numpy import byte
+#from numpy import byte
 import usb.core
 import usb.util
 
@@ -38,7 +38,7 @@ def start():
     listen(dev, endpoint_in, endpoint_out)
     #send command to teensy
 
-    #endpoint_out.write("version".encode() + bytes([0]))
+    endpoint_out.write("version".encode() + bytes([0]))
 
 def main():
     try:

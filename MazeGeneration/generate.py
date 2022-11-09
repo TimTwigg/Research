@@ -1,4 +1,4 @@
-# updated 23 October 2022
+# updated 3 November 2022
 # generate mc commands from Maze
 
 from MazeGeneration.Maze import Maze, DIR
@@ -40,7 +40,7 @@ def _generateCommands(maze: Maze, coords: tuple[int], cmdCoords: tuple[int], cmd
 
 
 def _generateCommandBlocks(maze: Maze, coords: tuple[int], cmdCoords: tuple[int], cmdDirection: tuple[int]) -> list[str]:
-    assert maze.isPath(0, maze.max_y-1, DIR.HERE, [8]), "Start of maze must be in lower left hand corner"
+    assert maze.isPath(0, maze.max_y-1, DIR.HERE, [8]), "Start of maze must be in lower left hand corner and must go straight for at least 2 blocks before turn"
     assert maze.isPath(0, maze.max_y-2, DIR.HERE) != maze.isPath(1, maze.max_y-1, DIR.HERE), "Must have only one path from start"
     
     SOUND = "block.note_block.banjo hostile"
