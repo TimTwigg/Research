@@ -1,4 +1,5 @@
 # sound puzzle generation
+# Author: Sam Hansen
 
 from collections import namedtuple
 
