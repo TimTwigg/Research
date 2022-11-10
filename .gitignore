@@ -1,6 +1,5 @@
 __pycache__/
 .vs/
-.mcfunction
+*.mcfunction
 .vscode
 .venv
-config.json
