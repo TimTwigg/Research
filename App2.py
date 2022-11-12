@@ -30,7 +30,7 @@ class App:
         self.releaseCamera()
         
     def grabCamera(self):
-        self._cam = cv2.VideoCapture(0)
+        self._cam = cv2.VideoCapture(1)
         print("Grabbed Camera")
         
     def releaseCamera(self):
@@ -43,7 +43,7 @@ class App:
             print("Failed to find camera")
             return
         
-        cv2.imwrite("test_img.png", frame)
+        cv2.imwrite("opencv_frame_0.png", frame)
         reader = gr.GridReader("opencv_frame_0.png", self._grid_size)
         grid = reader.readGrid()
         self._grid = grid.tolist()
@@ -51,6 +51,7 @@ class App:
     def callMaze(self):
         self.captureGrid()
         maze = Maze(self._grid)
+        print(maze)
         coords = (self._x, self._y, self._z)
         cmdCoords = (self._x + maze.max_x + 5, self._y + 1, self._z + maze.max_y)
         cmdDirection = (0, -1)
