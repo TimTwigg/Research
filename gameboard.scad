@@ -9,7 +9,7 @@ piece();
 module piece(){
 	translate([4.5,4.5,0]) cube([9,9,5]);
 	translate([3.0,3.0,4]) cube([12,12,5]);
-	translate([7.5,3.0,9]) cube([3,12,5]);
+	//translate([7.5,3.0,9]) cube([3,12,5]);
 }
 
 module cubes(){
