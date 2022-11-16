@@ -1,4 +1,4 @@
-# updated 23 October 2022
+# updated 3 November 2022
 
 ###########################################################
 
@@ -10,10 +10,12 @@
 ###########################################################
 
 import subprocess
+import cv2
+
 from MazeGeneration.Maze import Maze
 from MazeGeneration.generate import generate
-from opencv.gridcapture import screenshot
 from runCommands.refocus import setFocus
+import opencv.gridReaderFinal as gr
 
 class App:    
     def __init__(self):
@@ -23,13 +25,33 @@ class App:
         self._z = 0
         self._grid = None
         self._commands = []
+        
+    def __del__(self):
+        self.releaseCamera()
+        
+    def grabCamera(self):
+        self._cam = cv2.VideoCapture(1)
+        print("Grabbed Camera")
+        
+    def releaseCamera(self):
+        self._cam.release()
+        print("Released Camera")
     
     def captureGrid(self):
-        self._grid = screenshot(self._grid_size)
+        ret, frame = self._cam.read()
+        if not ret:
+            print("Failed to find camera")
+            return
+        
+        cv2.imwrite("opencv_frame_0.png", frame)
+        reader = gr.GridReader("opencv_frame_0.png", self._grid_size)
+        grid = reader.readGrid()
+        self._grid = grid.tolist()
     
     def callMaze(self):
         self.captureGrid()
         maze = Maze(self._grid)
+        print(maze)
         coords = (self._x, self._y, self._z)
         cmdCoords = (self._x + maze.max_x + 5, self._y + 1, self._z + maze.max_y)
         cmdDirection = (0, -1)
