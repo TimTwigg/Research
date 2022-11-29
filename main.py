@@ -7,7 +7,6 @@ import usb.util
 
 def listen(dev, endpoint_in, endpoint_out):
     app = App()
-    app.grabCamera()
     while(True):
         try:
             buf = dev.read(endpoint_in.bEndpointAddress, 64, 1000)

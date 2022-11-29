@@ -13,7 +13,6 @@ class GridReader:
         self.__grid = np.zeros((self.__squares_on_side, self.__squares_on_side), dtype=int)
         self.__warped = self.warp(self.threshImage())
 
-
     def setImage(self, new_image: "image"):
         '''
         Changes the image the object is reading. 
@@ -113,22 +112,6 @@ class GridReader:
         if color[1] not in range(30, 165):
             return False
         if color[2] not in range(100, 257):
-            return False
-        return True
-
-    def isRed(self, color: list[int]) -> bool:
-        '''
-        Checks if provided BGR color is red or not, then returns true or false.
-
-        color -- a list of 3 ints representing BGR color
-
-        returns: bool, true if red, false if not
-        '''
-        if color[0] not in range(0,7):
-            return False
-        if color[1] not in range(0, 100):
-            return False
-        if color[2] not in range(100, 256):
             return False
         return True
 

@@ -38,6 +38,7 @@ class App:
         print("Released Camera")
     
     def captureGrid(self):
+        self.grabCamera()
         ret, frame = self._cam.read()
         if not ret:
             print("Failed to find camera")
