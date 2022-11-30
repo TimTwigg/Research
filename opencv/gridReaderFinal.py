@@ -117,25 +117,6 @@ class GridReader:
             return False
         return True
 
-<<<<<<< HEAD
-    def isRed(self, color: list[int]) -> bool:
-        '''
-        Checks if provided BGR color is red or not, then returns true or false.
-
-        color -- a list of 3 ints representing BGR color
-
-        returns: bool, true if red, false if not
-        '''
-        if color[0] not in range(0,200):
-            return False
-        if color[1] not in range(0, 200):
-            return False
-        if color[2] not in range(100, 256):
-            return False
-        return True
-
-=======
->>>>>>> 917ed722d2d2d332d6334b0cc0239d1059edcbb3
     def readGrid(self) -> np.ndarray:
         '''
         Reads the grid image. If there are squares containing red, their number in the grid
