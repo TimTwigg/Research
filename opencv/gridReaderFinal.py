@@ -2,16 +2,18 @@ import numpy as np
 import cv2
 
 class GridReader:
-    def __init__(self, image: str, squares_on_side: int):
+    def __init__(self, image: str, baseline: str, squares_on_side: int):
         '''
         image -- path to theimage
+        baseline -- path to the baseline image
         squares_on_side -- number of squares on a single side of the grid
         '''
         self.__image = cv2.imread(image)
+        self.__baseline = cv2.imread(baseline)
         self.__squares_on_side = squares_on_side # num squares on a single side of the grid
         self.__widthImg = self.__heightImg = self.__squares_on_side * 50 + 50 # size of the image in pixels
         self.__grid = np.zeros((self.__squares_on_side, self.__squares_on_side), dtype=int)
-        self.__warped = self.warp(self.threshImage())
+        self.__baseline_warped, self.__warped = self.warp(self.threshImage(self.__baseline))
 
 
     def setImage(self, new_image: "image"):
@@ -49,7 +51,7 @@ class GridReader:
         npoints[2] = points[np.argmax(diff)]
         return npoints
 
-    def threshImage(self) -> "image":
+    def threshImage(self, image) -> "image":
         '''
         Takes a source image and converts it to monochrome, blurs it, and applies adaptive thresholding. 
         It then returns the result of this processing.
@@ -57,7 +59,7 @@ class GridReader:
         returns: image 
         '''
         # converts to monochrome
-        gray = cv2.cvtColor(self.__image, cv2.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         # blurs image slightly
         blur = cv2.GaussianBlur(gray, (5,5), 0)
         # adaptive thresholding                             this digit controls how much gets subtracted
@@ -65,7 +67,7 @@ class GridReader:
 
         return thresh
 
-    def warp(self, thresh: "image") -> "image":
+    def warp(self, thresh: "image") -> tuple["image", "image"]:
         '''
         Takes a threshed image as input and warps it to class specified size and returns the warped image.
 
@@ -89,8 +91,8 @@ class GridReader:
                     max_area = area
                     biggest = i
             c += 1
-        #cv2.imshow('name of the window', thresh)
-        #cv2.waitKey(0)
+        cv2.imshow('name of the window', thresh)
+        cv2.waitKey(0)
         # warps perspective to ensure the gridlines are straight as possible
         if biggest.size != 0:
             #print(f'biggest: {biggest}')
@@ -98,7 +100,7 @@ class GridReader:
             pts1 = np.float32(biggest)
             pts2 = np.float32([[0, 0], [self.__widthImg, 0], [0, self.__heightImg], [self.__widthImg, self.__heightImg]])
             matrix = cv2.getPerspectiveTransform(pts1, pts2)
-            return cv2.warpPerspective(self.__image, matrix, (self.__widthImg, self.__heightImg))
+            return cv2.warpPerspective(self.__baseline, matrix, (self.__widthImg, self.__heightImg)), cv2.warpPerspective(self.__image, matrix, (self.__widthImg, self.__heightImg))
     
     def isFilled(self, color: list[int]) -> bool:
         '''
@@ -124,9 +126,9 @@ class GridReader:
 
         returns: bool, true if red, false if not
         '''
-        if color[0] not in range(0,7):
+        if color[0] not in range(0,200):
             return False
-        if color[1] not in range(0, 100):
+        if color[1] not in range(0, 200):
             return False
         if color[2] not in range(100, 256):
             return False
@@ -145,15 +147,18 @@ class GridReader:
             for y in range (1, self.__squares_on_side + 1):
                 #print(self.__widthImg/ self.__squares_on_side)
                 #cv2.circle(self.__warped, (x * spacing + offset, y * spacing + offset), 5, (0, 255, 0))
-                #print(x, ",", y,":" , self.__warped[x * spacing + offset, y * spacing + offset])
+                # print(x, ",", y,":" , self.__warped[x * spacing + offset, y * spacing + offset])
                 if self.isFilled(self.__warped[x * spacing + offset, y * spacing + offset]):
                     self.__grid[x - 1, y - 1] = 1
-        #cv2.imshow('help', self.__warped)
-        #cv2.waitKey(0)
+        cv2.imshow('help', self.__warped)
+        cv2.waitKey(0)
         return(self.__grid)
 
 if __name__ == '__main__':
     #r = GridReader('grid1red.png', 1y)
-    r = GridReader('opencv_frame_0.png', 15)
+    # r = GridReader('opencv_frame_0.png', 15)
+    # r = GridReader('opencv_frame_1.png', 15)
+    r = GridReader('opencv_frame_1.png', 'opencv_frame_2.jpg', 15)
+    # cv2.imshow()
     print(r.readGrid())
 
