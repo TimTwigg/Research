@@ -15,7 +15,6 @@ class GridReader:
         self.__grid = np.zeros((self.__squares_on_side, self.__squares_on_side), dtype=int)
         self.__baseline_warped, self.__warped = self.warp(self.threshImage(self.__baseline))
 
-
     def setImage(self, new_image: "image"):
         '''
         Changes the image the object is reading. 
@@ -118,6 +117,7 @@ class GridReader:
             return False
         return True
 
+<<<<<<< HEAD
     def isRed(self, color: list[int]) -> bool:
         '''
         Checks if provided BGR color is red or not, then returns true or false.
@@ -134,6 +134,8 @@ class GridReader:
             return False
         return True
 
+=======
+>>>>>>> 917ed722d2d2d332d6334b0cc0239d1059edcbb3
     def readGrid(self) -> np.ndarray:
         '''
         Reads the grid image. If there are squares containing red, their number in the grid
