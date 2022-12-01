@@ -1,4 +1,4 @@
-# updated 3 November 2022
+# updated 30 November 2022
 
 ###########################################################
 
@@ -25,27 +25,38 @@ class App:
         self._z = 0
         self._grid = None
         self._commands = []
+        self.hasCamera = False
+        self.gotBlank = False
         
     def __del__(self):
         self.releaseCamera()
         
     def grabCamera(self):
         self._cam = cv2.VideoCapture(1)
+        self.hasCamera = True
         print("Grabbed Camera")
         
     def releaseCamera(self):
         self._cam.release()
+        self.hasCamera = False
         print("Released Camera")
-    
-    def captureGrid(self):
-        self.grabCamera()
+        
+    def takeImage(self, imgName):
+        if not self.hasCamera:
+            self.grabCamera()
         ret, frame = self._cam.read()
         if not ret:
             print("Failed to find camera")
             return
         
-        cv2.imwrite("opencv_frame_0.png", frame)
-        reader = gr.GridReader("opencv_frame_0.png", self._grid_size)
+        cv2.imwrite(imgName, frame)
+        
+        if imgName == "blank.png":
+            self.gotBlank = True
+    
+    def captureGrid(self):
+        self.takeImage("path.png")
+        reader = gr.GridReader("path.png", "blank.png", self._grid_size)
         grid = reader.readGrid()
         self._grid = grid.tolist()
     

@@ -90,8 +90,8 @@ class GridReader:
                     max_area = area
                     biggest = i
             c += 1
-        cv2.imshow('name of the window', thresh)
-        cv2.waitKey(0)
+        #cv2.imshow('name of the window', thresh)
+        #cv2.waitKey(0)
         # warps perspective to ensure the gridlines are straight as possible
         if biggest.size != 0:
             #print(f'biggest: {biggest}')
@@ -133,15 +133,15 @@ class GridReader:
                 # print(x, ",", y,":" , self.__warped[x * spacing + offset, y * spacing + offset])
                 if self.isFilled(self.__warped[x * spacing + offset, y * spacing + offset]):
                     self.__grid[x - 1, y - 1] = 1
-        cv2.imshow('help', self.__warped)
-        cv2.waitKey(0)
+        #cv2.imshow('help', self.__warped)
+        #cv2.waitKey(0)
         return(self.__grid)
 
 if __name__ == '__main__':
     #r = GridReader('grid1red.png', 1y)
     # r = GridReader('opencv_frame_0.png', 15)
     # r = GridReader('opencv_frame_1.png', 15)
-    r = GridReader('opencv_frame_1.png', 'opencv_frame_2.jpg', 15)
+    r = GridReader('path.jpg', 'blank.jpg', 15)
     # cv2.imshow()
     print(r.readGrid())
 
