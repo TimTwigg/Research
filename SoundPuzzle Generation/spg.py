@@ -52,6 +52,8 @@ def generateSP(puzzle: SoundPuzzle, coords: tuple[int]):
     #print("Sounds:")
     #puzzle.printSounds()
     assert len(coords) == 3, "Coords must have x, y, z values"
+    for x in coords:
+        assert type(x) == int, "Coords must be integers"
 
     x, y, z = coords
     commands = []
