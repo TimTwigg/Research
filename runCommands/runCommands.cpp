@@ -1,4 +1,4 @@
-// updated 14 June 2022
+// updated 6 January 2023
 // C++ module to run commands by simulating keyboard input
 
 #include <string>
@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
             append(c, v);
         }
         SendInput(v.size(), v.data(), sizeof(INPUT));
-        //Sleep(50);
+        Sleep(1);
         press(ENTER);
     }
 

@@ -7,7 +7,7 @@ import usb.util
 
 def listen(dev, endpoint_in, endpoint_out):
     app = App()
-    app.grabCamera()
+    
     while(True):
         try:
             buf = dev.read(endpoint_in.bEndpointAddress, 64, 1000)
@@ -16,6 +16,10 @@ def listen(dev, endpoint_in, endpoint_out):
             if code == 0:
                 continue
             elif code == 1:
+                #if not app.gotBlank:
+                #    app.takeImage("blank.png")
+                #    print("Taken blank")
+                #else:
                 app.callMaze()
             elif code == 2:
                 app.callSound()
