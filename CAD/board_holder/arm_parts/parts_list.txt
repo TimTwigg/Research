@@ -1,0 +1,18 @@
+Clamp Knob x1
+Clamp Bolt x1
+Clamp Frame x1
+Arm Ext B x2
+Bar Sleeve Symm x1
+Bar Symm x1
+Arm First Symm x2
+Nut Symm x2
+Bolt Printed x4
+Washer Locking x4
+Washer Friction x2
+Knob for Locking Washer x4
+Camera Plate Base x1
+Camera Plate Screw x1
+Hex Shaft x1
+
+gotten from Lift Pod
+https://www.thingiverse.com/thing:4625988
