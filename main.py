@@ -16,11 +16,11 @@ def listen(dev, endpoint_in, endpoint_out):
             if code == 0:
                 continue
             elif code == 1:
-                #if not app.gotBlank:
-                #    app.takeImage("blank.png")
-                #    print("Taken blank")
-                #else:
-                app.callMaze()
+                if not app.gotBlank:
+                    app.takeImage("blank.png")
+                    print("Taken blank")
+                else:
+                    app.callMaze()
             elif code == 2:
                 app.callSound()
         except usb.core.USBTimeoutError as e:
