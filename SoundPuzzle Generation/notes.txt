@@ -1,0 +1,11 @@
+fill {x} {y} {z} {} {} {} air
+
+starting area with buttons:
+fill {x} {y} {z} {x+4} {y+1} {z+6} stone
+fill {x+1} {y+1} {z+1} {x+3} {y+1} {z+5} air
+setblock {x+4} {y+1} {z+4} stone
+setblock {x+4} {y+2} {z+4} oak_botton[facing=up] destroy
+setblock {x+4} {y} {z+4} command_block[facing=down]{{Command: 'execute unless block {x+5} {y+5} {z+4} diamond_block run setblock {x+5} {y+5} {z+4} diamond_block'}} destroy
+setblock {x+4} {y-1} {z+4} chain_command_block[facing=down]{{Command: 'tag @p add soundPuzzle', auto:1b}} destroy
+setblock {x+4} {y-2} {z+4} chain_command_block[facing=down]{{Command: 'tp @a[tag=soundPuzzle] {x+7} {y+2} {z+4}', auto:1b}} destroy
+
