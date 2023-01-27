@@ -1,4 +1,4 @@
-# updated 30 November 2022
+# updated 27 January 2023
 
 ###########################################################
 
@@ -11,6 +11,7 @@
 
 import subprocess
 import cv2
+import re
 
 from MazeGeneration.Maze import Maze
 from MazeGeneration.generate import generate
@@ -71,7 +72,16 @@ class App:
         commands = generate(maze, coords, cmdCoords, cmdDirection, {"falsePaths": True, "light": False})
         
         # compare old commands with new ones to only execute the difference
-        to_execute = [i for i in commands if i not in self._commands]
+        # the command block commands are compared this way, the commands which build the actual maze all have to
+        # be run to allow for a different generation of false paths with the new user-defined path
+        to_execute = []
+        for c in commands:
+            if re.search("fill [-0-9]+ [-0-9]+ [-0-9]+ [-0-9]+ [-0-9]+ [-0-9]+ black_concrete", c) != None:
+                to_execute.append(c)
+                break
+            if c not in self._commands:
+                to_execute.append(c)
+        
         with open("build.mcfunction", "w") as f:
             f.write("\n".join(to_execute))
         
