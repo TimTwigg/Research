@@ -77,6 +77,9 @@ class GridReader:
         # finds all contours
         cnts, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         cv2.drawContours(thresh, cnts, -1,(255, 255, 255), 3)
+        
+        # cv2.imshow("asd", thresh)
+        # cv2.waitKey()
 
         # finds the largest square, the border of the grid
         max_area = 0
@@ -133,8 +136,8 @@ class GridReader:
                 # print(x, ",", y,":" , self.__warped[x * spacing + offset, y * spacing + offset])
                 if self.isFilled(self.__warped[x * spacing + offset, y * spacing + offset]):
                     self.__grid[x - 1, y - 1] = 1
-        #cv2.imshow('help', self.__warped)
-        #cv2.waitKey(0)
+        # cv2.imshow('help', self.__warped)
+        # cv2.waitKey(0)
         return(self.__grid)
 
 if __name__ == '__main__':
