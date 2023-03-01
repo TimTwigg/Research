@@ -29,6 +29,7 @@ def listen(dev, endpoint_in, endpoint_out):
             # catches the error thrown by gridReaderFinal when it doesn't find
             # the grid and the 'biggest' variable is not defined.
             print("Could not interpret image. Re-focus camera")
+            break
 
 def start():
     dev = usb.core.find(idVendor = 0x16C0, idProduct = 0x0486)
