@@ -19,8 +19,8 @@ from runCommands.refocus import setFocus
 import opencv.gridReaderFinal as gr
 
 class App:    
-    def __init__(self):
-        self._grid_size = 15
+    def __init__(self, board_size:int = 15):
+        self._grid_size = board_size
         self._x = 0
         self._y = -50
         self._z = 0
