@@ -7,6 +7,7 @@ import usb.util
 
 def listen(dev, endpoint_in, endpoint_out):
     app = App()
+    
     while(True):
         try:
             buf = dev.read(endpoint_in.bEndpointAddress, 64, 1000)
@@ -15,7 +16,11 @@ def listen(dev, endpoint_in, endpoint_out):
             if code == 0:
                 continue
             elif code == 1:
-                app.callMaze()
+                if not app.gotBlank:
+                    app.takeImage("blank.png")
+                    print("Taken blank")
+                else:
+                    app.callMaze()
             elif code == 2:
                 app.callSound()
         except usb.core.USBTimeoutError as e:
@@ -24,6 +29,7 @@ def listen(dev, endpoint_in, endpoint_out):
             # catches the error thrown by gridReaderFinal when it doesn't find
             # the grid and the 'biggest' variable is not defined.
             print("Could not interpret image. Re-focus camera")
+            break
 
 def start():
     dev = usb.core.find(idVendor = 0x16C0, idProduct = 0x0486)

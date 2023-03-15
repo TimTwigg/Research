@@ -1,0 +1,5 @@
+Corner x4
+Blank side x3
+Mount side x1
+
+and the stuff in arm parts

@@ -1,4 +1,4 @@
-// updated 14 June 2022
+// updated 6 January 2023
 // C++ module to run commands by simulating keyboard input
 
 #include <string>
@@ -83,13 +83,15 @@ int main(int argc, char** argv) {
         std::getline(in, command);
         if (command.size() < 1) break;
 
-        press(SLASH);
-        Sleep(50);
         for (char c : command) {
             append(c, v);
         }
+
+        Sleep(5);
+        press(SLASH);
+        Sleep(50);
         SendInput(v.size(), v.data(), sizeof(INPUT));
-        //Sleep(50);
+        Sleep(1);
         press(ENTER);
     }
 
