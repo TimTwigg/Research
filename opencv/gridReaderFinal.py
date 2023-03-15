@@ -66,7 +66,7 @@ class GridReader:
 
         return thresh
 
-    def warp(self, thresh: "image") -> tuple["image", "image"]:
+    def warp(self, thresh: "image") -> tuple["image", "image"]: 
         '''
         Takes a threshed image as input and warps it to class specified size and returns the warped image.
 
