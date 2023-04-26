@@ -1,11 +1,10 @@
-
-
-const GameCard = ({ game }) => {
-    const { name, image, id } = game;
+const GameCard = ({ name, image, id }) => {
     return (
-        <div className="game-card" onClick={() => onGameClick(id)}>
+        <div class="game-card">
             <img src={image} alt={name} />
-            <div className="game-card-name">{name}</div>
-        </div>
+            <h2 class="game-card-name">{name}</h2>
+        </div>        
     );
-    }
+};
+
+export default GameCard;
