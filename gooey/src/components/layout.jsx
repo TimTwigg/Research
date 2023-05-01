@@ -6,11 +6,11 @@ const Layout = ({ title, children }) => {
             <nav>
                 <h3>Mixed Ability Play</h3>
                 <div className = "links">
-                    {title != "settings" && <a href = "/settings">Settings</a>}
-                    {title != "help" && <a href = "/help">Help</a>}
+                    {title !== "settings" && <a href = "/settings">Settings</a>}
+                    {title !== "help" && <a href = "/help">Help</a>}
                 </div>
             </nav>
-            <main>
+            <main className = "container">
                 {children}
             </main>
         </div>

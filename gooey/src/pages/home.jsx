@@ -9,7 +9,7 @@ const Home = () => {
             <h1>Home</h1>
             <hr/>
             <div>
-                <GameCard name="test"></GameCard>
+                <GameCard name="maze" image = "./../assets/mazeIcon.png" link = "/maze"></GameCard>
             </div>
         </Layout>
     )
