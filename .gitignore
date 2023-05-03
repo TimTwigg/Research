@@ -3,4 +3,5 @@ __pycache__/
 *.mcfunction
 .vscode
 .venv
-*.png
+blank.png
+path.png

@@ -1,5 +1,6 @@
 import React from "react";
 import Layout from "../components/layout";
+import Camera from "../components/camera";
 
 const Maze = () => {
     return (
@@ -9,6 +10,7 @@ const Maze = () => {
             <p>
                 Make a maze.
             </p>
+            <Camera/>
         </Layout>
     )
 }
