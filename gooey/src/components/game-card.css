@@ -1,6 +1,6 @@
 .game-card {
     border: 1px solid gray;
-    background-color: black;
+    background-color: #C7B9B9;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     display: flex;
@@ -24,4 +24,5 @@
     font-weight: bold;
     text-align: center;
     margin: 0;
+    color: black;
 }
