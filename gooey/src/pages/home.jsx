@@ -2,7 +2,7 @@ import React from "react";
 import GameCard from "../components/game-card";
 import Layout from "../components/layout";
 import "./home.css";
-import maze from "./../assets/mazeIcon.png";
+import maze from "./../images/mazeIcon.png";
 
 const Home = () => {
     return (
