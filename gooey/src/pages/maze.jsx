@@ -7,9 +7,6 @@ const Maze = () => {
         <Layout title = "maze">
             <h1>Maze</h1>
             <hr/>
-            <p>
-                Make a maze.
-            </p>
             <Camera/>
         </Layout>
     )

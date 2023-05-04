@@ -1,3 +1,7 @@
 .Camera {
-    margin-bottom: 20px;
+    margin: 20px;
+}
+
+.Camera div {
+    margin-bottom: 10px;
 }
