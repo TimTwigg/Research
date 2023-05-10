@@ -178,6 +178,10 @@ p.middle {
     text-align: center;
 }
 
+p.underline {
+    text-decoration: underline;
+}
+
 footer {
     color: white;
     margin-top: auto;

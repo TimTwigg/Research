@@ -21,6 +21,7 @@ const Camera = () => {
     const [image, SetImage] = useState(square);
     const [checked, SetChecked] = useState(false);
     const [gridSize, SetGridSize] = useState(15);
+    const [enableCamera, SetEnableCamera] = useState(false);
 
     const videoConstraints = {
         width: 640,
@@ -32,9 +33,12 @@ const Camera = () => {
         SetDevices(mediaDevices.filter(({ kind }) => kind === "videoinput"));
     }, [SetDevices]);
 
-    const TakeImage = (img) => {
+    const TakeImage = async (img) => {
+        SetEnableCamera(false);
         SetImage(img);
         // TODO: send message to flask
+        // receive message from flask to reanable?
+        SetEnableCamera(true);
     }
 
     useEffect(() => {
@@ -65,20 +69,29 @@ const Camera = () => {
             </div>
 
             <div className = "one-half column">
-                <p>Camera Feed</p>
-                <Webcam className = "marginB" videoConstraints = {videoConstraints} audio = {false} screenshotFormat = "image/png">
-                    {({ getScreenshot }) => (
-                        <div>
-                            <button onClick = {() => {TakeImage(getScreenshot())}} className = "five columns offset-by-three columns">Take Image</button>
-                        </div>
-                    )}
-                </Webcam>
+                <p className = "underline">Camera Feed</p>
+                {enableCamera &&
+                    <Webcam className = "marginB" videoConstraints = {videoConstraints} audio = {false} screenshotFormat = "image/png">
+                        {({ getScreenshot }) => (
+                            <div>
+                                <button onClick = {() => {TakeImage(getScreenshot())}} className = "five columns offset-by-three columns">Take Image</button>
+                            </div>
+                        )}
+                    </Webcam>
+                }
+                {!enableCamera &&
+                    <div>
+                        <img src = {square} alt = "" height = {360}/>
+                        <div className = "spacer"/>
+                        <button className = "five columns offset-by-three columns" onClick = {() => SetEnableCamera(true)}>Enable Camera</button>
+                    </div>
+                }
             </div>
 
             <div className = "one-half column">
                 {checked &&
                     <div>
-                        <p>Previous Image</p>
+                        <p className = "underline">Previous Image</p>
                         <img src = {image} alt = "" height = {360}/>
                         <div className = "spacer"/>
                         <button className = "five columns offset-by-three columns" onClick = {() => saveImage(image)}>Download</button>
