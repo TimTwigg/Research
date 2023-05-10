@@ -5,16 +5,14 @@ import square from "./../images/square.png";
 
 function saveBase64AsFile(base64, fileName) {
     var link = document.createElement("a");
-
-    document.body.appendChild(link); // for Firefox
-
+    document.body.appendChild(link);
     link.setAttribute("href", base64);
     link.setAttribute("download", fileName);
     link.click();
 }
 
 function saveImage(image) {
-    saveBase64AsFile(image, "test.png");
+    saveBase64AsFile(image, "capture.png");
 }
 
 const Camera = () => {
@@ -22,6 +20,7 @@ const Camera = () => {
     const [deviceID, SetDeviceID] = useState("");
     const [image, SetImage] = useState(square);
     const [checked, SetChecked] = useState(false);
+    const [gridSize, SetGridSize] = useState(15);
 
     const videoConstraints = {
         width: 640,
@@ -33,11 +32,9 @@ const Camera = () => {
         SetDevices(mediaDevices.filter(({ kind }) => kind === "videoinput"));
     }, [SetDevices]);
 
-    const DisplayImage = (img) => {
+    const TakeImage = (img) => {
         SetImage(img);
-        if (!checked) {
-            saveImage(img);
-        }
+        // TODO: send message to flask
     }
 
     useEffect(() => {
@@ -47,22 +44,32 @@ const Camera = () => {
     return (
         <div className = "Camera">
             <div className = "twelve columns">
-                <label className = "two columns offset-by-one column" htmlFor = "cameraSelect">Camera</label>
-                <select className = "eight columns" id = "cameraSelect" onChange = {item => SetDeviceID(item.target.value)}>
-                    {
-                        devices.map((dev, i) => <option key = {i} value = {dev.deviceId}>{dev.label}</option>)
-                    }
-                </select>
+                <span className = "twelve columns">
+                    <label className = "two columns offset-by-one column" htmlFor = "cameraSelect">Camera</label>
+                    <select className = "eight columns" id = "cameraSelect" onChange = {item => SetDeviceID(item.target.value)}>
+                        {
+                            devices.map((dev, i) => <option key = {i} value = {dev.deviceId}>{dev.label}</option>)
+                        }
+                    </select>
+                </span>
                 
-                <label className = "three columns offset-by-one column" htmlFor = "testCheck">Test Image Before Saving</label>
-                <input type = "checkbox" id = "testCheck" className = "two columns" onChange = {(ev) => SetChecked(ev.target.checked)}/>
+                <span className = "twelve columns">
+                    <label className = "three columns offset-by-one column" htmlFor = "testCheck">Display Previous State</label>
+                    <input type = "checkbox" id = "testCheck" className = "two columns" onChange = {ev => SetChecked(ev.target.checked)}/>
+                </span>
+
+                <span className = "twelve columns">
+                    <label className = "three columns offset-by-one column" htmlFor = "gridSize">Grid Dimension</label>
+                    <input type = "number" id = "gridSize" className = "two columns" defaultValue = {gridSize} onChange = {ev => SetGridSize(parseInt(ev.target.value))}/>
+                </span>
             </div>
 
             <div className = "one-half column">
+                <p>Camera Feed</p>
                 <Webcam className = "marginB" videoConstraints = {videoConstraints} audio = {false} screenshotFormat = "image/png">
                     {({ getScreenshot }) => (
                         <div>
-                            <button onClick = {() => {DisplayImage(getScreenshot())}} className = "five columns offset-by-three columns">Take Image</button>
+                            <button onClick = {() => {TakeImage(getScreenshot())}} className = "five columns offset-by-three columns">Take Image</button>
                         </div>
                     )}
                 </Webcam>
@@ -71,9 +78,10 @@ const Camera = () => {
             <div className = "one-half column">
                 {checked &&
                     <div>
+                        <p>Previous Image</p>
                         <img src = {image} alt = "" height = {360}/>
                         <div className = "spacer"/>
-                        <button className = "five columns offset-by-three columns" onClick = {() => saveImage(image)}>Save</button>
+                        <button className = "five columns offset-by-three columns" onClick = {() => saveImage(image)}>Download</button>
                     </div>
                 }
             </div>
