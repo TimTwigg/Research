@@ -9,13 +9,12 @@ CORS(app)
 def test(jsdata):
     data = json.loads(jsdata)
     print(data["gridsize"])
-    return {"name": "test"}
+    return 0
 
 @app.route("/maze/photo")
 def takePhotoWithPython():
     
     return 0
-
 
 if __name__ == "__main__":
     app.run()

@@ -37,9 +37,9 @@ const Camera = () => {
         SetEnableCamera(false);
         SetImage(img);
         let data = {
-            "gridsize": 15
+            "gridsize": gridSize
         }
-        fetch("http:localhost:3000/data/" + JSON.stringify(data)).then(res => res.json().then(data => {console.log(data)}))
+        fetch("http:localhost:5000/data/" + JSON.stringify(data)).then(res => res.json().then(data => {console.log(data)}))
         SetEnableCamera(true);
     }
 
