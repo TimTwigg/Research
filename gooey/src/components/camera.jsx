@@ -24,7 +24,7 @@ const Camera = () => {
     const [enableCamera, SetEnableCamera] = useState(false);
 
     const videoConstraints = {
-        width: 640,
+        width: 360,
         height: 360,
         deviceId: deviceID
     }
@@ -33,11 +33,13 @@ const Camera = () => {
         SetDevices(mediaDevices.filter(({ kind }) => kind === "videoinput"));
     }, [SetDevices]);
 
-    const TakeImage = async (img) => {
+    const TakeImage = (img) => {
         SetEnableCamera(false);
         SetImage(img);
-        // TODO: send message to flask
-        // receive message from flask to reanable?
+        let data = {
+            "gridsize": 15
+        }
+        fetch("http:localhost:3000/data/" + JSON.stringify(data)).then(res => res.json().then(data => {console.log(data)}))
         SetEnableCamera(true);
     }
 
