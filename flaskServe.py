@@ -14,5 +14,11 @@ def generateMaze():
     print(data)
     return data
 
+@app.route("/maze/photo")
+def takePhotoWithPython():
+    
+    return 0
+
+
 if __name__ == "__main__":
     app.run()
