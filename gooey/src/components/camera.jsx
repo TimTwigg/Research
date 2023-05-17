@@ -38,8 +38,11 @@ const Camera = () => {
         SetImage(img);
         // TODO: send message to flask
         // receive message from flask to reanable?
+        const response = await fetch('http://localhost:5000/photo');
+        const data = await response.json();
         SetEnableCamera(true);
     }
+
 
     useEffect(() => {
         navigator.mediaDevices.enumerateDevices().then(handleDevices);
