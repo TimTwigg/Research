@@ -19,7 +19,7 @@ from numpy.linalg.linalg import _multi_dot_matrix_chain_order
 from numpy.testing import (
     assert_, assert_equal, assert_raises, assert_array_equal,
     assert_almost_equal, assert_allclose, suppress_warnings,
-    assert_raises_regex, HAS_LAPACK64,
+    assert_raises_regex, HAS_LAPACK64, IS_WASM
     )
 
 
@@ -1063,6 +1063,7 @@ class TestMatrixPower:
         assert_raises(LinAlgError, matrix_power, np.array([[1], [2]], dt), 1)
         assert_raises(LinAlgError, matrix_power, np.ones((4, 3, 2), dt), 1)
 
+    @pytest.mark.skipif(IS_WASM, reason="fp errors don't work in wasm")
     def test_exceptions_not_invertible(self, dt):
         if dt in self.dtnoinv:
             return
@@ -1223,6 +1224,14 @@ class _TestNormBase:
     dt = None
     dec = None
 
+    @staticmethod
+    def check_dtype(x, res):
+        if issubclass(x.dtype.type, np.inexact):
+            assert_equal(res.dtype, x.real.dtype)
+        else:
+            # For integer input, don't have to test float precision of output.
+            assert_(issubclass(res.dtype.type, np.floating))
+
 
 class _TestNormGeneral(_TestNormBase):
 
@@ -1239,37 +1248,37 @@ class _TestNormGeneral(_TestNormBase):
 
         all_types = exact_types + inexact_types
 
-        for each_inexact_types in all_types:
-            at = a.astype(each_inexact_types)
+        for each_type in all_types:
+            at = a.astype(each_type)
 
             an = norm(at, -np.inf)
-            assert_(issubclass(an.dtype.type, np.floating))
+            self.check_dtype(at, an)
             assert_almost_equal(an, 0.0)
 
             with suppress_warnings() as sup:
                 sup.filter(RuntimeWarning, "divide by zero encountered")
                 an = norm(at, -1)
-                assert_(issubclass(an.dtype.type, np.floating))
+                self.check_dtype(at, an)
                 assert_almost_equal(an, 0.0)
 
             an = norm(at, 0)
-            assert_(issubclass(an.dtype.type, np.floating))
+            self.check_dtype(at, an)
             assert_almost_equal(an, 2)
 
             an = norm(at, 1)
-            assert_(issubclass(an.dtype.type, np.floating))
+            self.check_dtype(at, an)
             assert_almost_equal(an, 2.0)
 
             an = norm(at, 2)
-            assert_(issubclass(an.dtype.type, np.floating))
+            self.check_dtype(at, an)
             assert_almost_equal(an, an.dtype.type(2.0)**an.dtype.type(1.0/2.0))
 
             an = norm(at, 4)
-            assert_(issubclass(an.dtype.type, np.floating))
+            self.check_dtype(at, an)
             assert_almost_equal(an, an.dtype.type(2.0)**an.dtype.type(1.0/4.0))
 
             an = norm(at, np.inf)
-            assert_(issubclass(an.dtype.type, np.floating))
+            self.check_dtype(at, an)
             assert_almost_equal(an, 1.0)
 
     def test_vector(self):
@@ -1402,41 +1411,41 @@ class _TestNorm2D(_TestNormBase):
 
         all_types = exact_types + inexact_types
 
-        for each_inexact_types in all_types:
-            at = a.astype(each_inexact_types)
+        for each_type in all_types:
+            at = a.astype(each_type)
 
             an = norm(at, -np.inf)
-            assert_(issubclass(an.dtype.type, np.floating))
+            self.check_dtype(at, an)
             assert_almost_equal(an, 2.0)
 
             with suppress_warnings() as sup:
                 sup.filter(RuntimeWarning, "divide by zero encountered")
                 an = norm(at, -1)
-                assert_(issubclass(an.dtype.type, np.floating))
+                self.check_dtype(at, an)
                 assert_almost_equal(an, 1.0)
 
             an = norm(at, 1)
-            assert_(issubclass(an.dtype.type, np.floating))
+            self.check_dtype(at, an)
             assert_almost_equal(an, 2.0)
 
             an = norm(at, 2)
-            assert_(issubclass(an.dtype.type, np.floating))
+            self.check_dtype(at, an)
             assert_almost_equal(an, 3.0**(1.0/2.0))
 
             an = norm(at, -2)
-            assert_(issubclass(an.dtype.type, np.floating))
+            self.check_dtype(at, an)
             assert_almost_equal(an, 1.0)
 
             an = norm(at, np.inf)
-            assert_(issubclass(an.dtype.type, np.floating))
+            self.check_dtype(at, an)
             assert_almost_equal(an, 2.0)
 
             an = norm(at, 'fro')
-            assert_(issubclass(an.dtype.type, np.floating))
+            self.check_dtype(at, an)
             assert_almost_equal(an, 2.0)
 
             an = norm(at, 'nuc')
-            assert_(issubclass(an.dtype.type, np.floating))
+            self.check_dtype(at, an)
             # Lower bar needed to support low precision floats.
             # They end up being off by 1 in the 7th place.
             np.testing.assert_almost_equal(an, 2.7320508075688772, decimal=6)
@@ -1773,29 +1782,31 @@ class TestQR:
 class TestCholesky:
     # TODO: are there no other tests for cholesky?
 
-    def test_basic_property(self):
+    @pytest.mark.parametrize(
+        'shape', [(1, 1), (2, 2), (3, 3), (50, 50), (3, 10, 10)]
+    )
+    @pytest.mark.parametrize(
+        'dtype', (np.float32, np.float64, np.complex64, np.complex128)
+    )
+    def test_basic_property(self, shape, dtype):
         # Check A = L L^H
-        shapes = [(1, 1), (2, 2), (3, 3), (50, 50), (3, 10, 10)]
-        dtypes = (np.float32, np.float64, np.complex64, np.complex128)
+        np.random.seed(1)
+        a = np.random.randn(*shape)
+        if np.issubdtype(dtype, np.complexfloating):
+            a = a + 1j*np.random.randn(*shape)
 
-        for shape, dtype in itertools.product(shapes, dtypes):
-            np.random.seed(1)
-            a = np.random.randn(*shape)
-            if np.issubdtype(dtype, np.complexfloating):
-                a = a + 1j*np.random.randn(*shape)
+        t = list(range(len(shape)))
+        t[-2:] = -1, -2
 
-            t = list(range(len(shape)))
-            t[-2:] = -1, -2
+        a = np.matmul(a.transpose(t).conj(), a)
+        a = np.asarray(a, dtype=dtype)
 
-            a = np.matmul(a.transpose(t).conj(), a)
-            a = np.asarray(a, dtype=dtype)
+        c = np.linalg.cholesky(a)
 
-            c = np.linalg.cholesky(a)
-
-            b = np.matmul(c, c.transpose(t).conj())
-            assert_allclose(b, a,
-                            err_msg=f'{shape} {dtype}\n{a}\n{c}',
-                            atol=500 * a.shape[0] * np.finfo(dtype).eps)
+        b = np.matmul(c, c.transpose(t).conj())
+        with np._no_nep50_warning():
+            atol = 500 * a.shape[0] * np.finfo(dtype).eps
+        assert_allclose(b, a, atol=atol, err_msg=f'{shape} {dtype}\n{a}\n{c}')
 
     def test_0_size(self):
         class ArraySubclass(np.ndarray):
@@ -1835,6 +1846,7 @@ def test_byteorder_check():
             assert_array_equal(res, routine(sw_arr))
 
 
+@pytest.mark.skipif(IS_WASM, reason="fp errors don't work in wasm")
 def test_generalized_raise_multiloop():
     # It should raise an error even if the error doesn't occur in the
     # last iteration of the ufunc inner loop
@@ -1898,6 +1910,7 @@ def test_xerbla_override():
             pytest.skip('Numpy xerbla not linked in.')
 
 
+@pytest.mark.skipif(IS_WASM, reason="Cannot start subprocess")
 @pytest.mark.slow
 def test_sdot_bug_8577():
     # Regression test that loading certain other libraries does not
@@ -2101,6 +2114,27 @@ class TestTensorinv:
         ainv = linalg.tensorinv(a, ind=1)
         b = np.ones(24)
         assert_allclose(np.tensordot(ainv, b, 1), np.linalg.tensorsolve(a, b))
+
+
+class TestTensorsolve:
+
+    @pytest.mark.parametrize("a, axes", [
+        (np.ones((4, 6, 8, 2)), None),
+        (np.ones((3, 3, 2)), (0, 2)),
+        ])
+    def test_non_square_handling(self, a, axes):
+        with assert_raises(LinAlgError):
+            b = np.ones(a.shape[:2])
+            linalg.tensorsolve(a, b, axes=axes)
+
+    @pytest.mark.parametrize("shape",
+        [(2, 3, 6), (3, 4, 4, 3), (0, 3, 3, 0)],
+    )
+    def test_tensorsolve_result(self, shape):
+        a = np.random.randn(*shape)
+        b = np.ones(a.shape[:2])
+        x = np.linalg.tensorsolve(a, b)
+        assert_allclose(np.tensordot(a, x, axes=len(x.shape)), b)
 
 
 def test_unsupported_commontype():

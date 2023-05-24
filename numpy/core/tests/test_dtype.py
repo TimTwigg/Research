@@ -11,9 +11,14 @@ from numpy.core._rational_tests import rational
 from numpy.core._multiarray_tests import create_custom_field_dtype
 from numpy.testing import (
     assert_, assert_equal, assert_array_equal, assert_raises, HAS_REFCOUNT,
-    IS_PYSTON)
+    IS_PYSTON, _OLD_PROMOTION)
 from numpy.compat import pickle
 from itertools import permutations
+import random
+
+import hypothesis
+from hypothesis.extra import numpy as hynp
+
 
 
 def assert_dtype_equal(a, b):
@@ -121,6 +126,15 @@ class TestBuiltin:
         with assert_raises(TypeError):
             np.dtype(dtype)
 
+    def test_remaining_dtypes_with_bad_bytesize(self):
+        # The np.<name> aliases were deprecated, these probably should be too 
+        assert np.dtype("int0") is np.dtype("intp")
+        assert np.dtype("uint0") is np.dtype("uintp")
+        assert np.dtype("bool8") is np.dtype("bool")
+        assert np.dtype("bytes0") is np.dtype("bytes")
+        assert np.dtype("str0") is np.dtype("str")
+        assert np.dtype("object0") is np.dtype("object")
+
     @pytest.mark.parametrize(
         'value',
         ['m8', 'M8', 'datetime64', 'timedelta64',
@@ -175,11 +189,11 @@ class TestBuiltin:
                       'formats': ['i4', 'f4'],
                       'offsets': [0, 4]})
         y = np.dtype({'names': ['B', 'A'],
-                      'formats': ['f4', 'i4'],
+                      'formats': ['i4', 'f4'],
                       'offsets': [4, 0]})
         assert_equal(x == y, False)
-        # But it is currently an equivalent cast:
-        assert np.can_cast(x, y, casting="equiv")
+        # This is an safe cast (not equiv) due to the different names:
+        assert np.can_cast(x, y, casting="safe")
 
 
 class TestRecord:
@@ -218,7 +232,8 @@ class TestRecord:
         assert refcounts == refcounts_new
 
     def test_mutate(self):
-        # Mutating a dtype should reset the cached hash value
+        # Mutating a dtype should reset the cached hash value.
+        # NOTE: Mutating should be deprecated, but new API added to replace it.
         a = np.dtype([('yo', int)])
         b = np.dtype([('yo', int)])
         c = np.dtype([('ye', int)])
@@ -231,6 +246,16 @@ class TestRecord:
         a.__setstate__(state)
         assert_dtype_equal(a, b)
         assert_dtype_not_equal(a, c)
+
+    def test_mutate_error(self):
+        # NOTE: Mutating should be deprecated, but new API added to replace it.
+        a = np.dtype("i,i")
+
+        with pytest.raises(ValueError, match="must replace all names at once"):
+            a.names = ["f0"]
+
+        with pytest.raises(ValueError, match=".*and not string"):
+            a.names = ["f0", b"not a unicode name"]
 
     def test_not_lists(self):
         """Test if an appropriate exception is raised when passing bad values to
@@ -312,8 +337,8 @@ class TestRecord:
         dt2 = np.dtype({'names':['f2', 'f0', 'f1'],
                         'formats':['<u4', '<u2', '<u2'],
                         'offsets':[4, 0, 2]}, align=True)
-        vals = [(0, 1, 2), (3, -1, 4)]
-        vals2 = [(0, 1, 2), (3, -1, 4)]
+        vals = [(0, 1, 2), (3, 2**15-1, 4)]
+        vals2 = [(0, 1, 2), (3, 2**15-1, 4)]
         a = np.array(vals, dt)
         b = np.array(vals2, dt2)
         assert_equal(a.astype(dt2), b)
@@ -633,6 +658,29 @@ class TestSubarray:
         assert dt == np.dtype([])
         dt = np.dtype({"names": [], "formats": [], "itemsize": 0}, align=True)
         assert dt == np.dtype([])
+
+    def test_subarray_base_item(self):
+        arr = np.ones(3, dtype=[("f", "i", 3)])
+        # Extracting the field "absorbs" the subarray into a view:
+        assert arr["f"].base is arr
+        # Extract the structured item, and then check the tuple component:
+        item = arr.item(0)
+        assert type(item) is tuple and len(item) == 1
+        assert item[0].base is arr
+
+    def test_subarray_cast_copies(self):
+        # Older versions of NumPy did NOT copy, but they got the ownership
+        # wrong (not actually knowing the correct base!).  Versions since 1.21
+        # (I think) crashed fairly reliable.  This defines the correct behavior
+        # as a copy.  Keeping the ownership would be possible (but harder)
+        arr = np.ones(3, dtype=[("f", "i", 3)])
+        cast = arr.astype(object)
+        for fields in cast:
+            assert type(fields) == tuple and len(fields) == 1
+            subarr = fields[0]
+            assert subarr.base is None
+            assert subarr.flags.owndata
+
 
 def iter_struct_object_dtypes():
     """
@@ -1059,6 +1107,139 @@ class TestDtypeAttributes:
             pass
         assert_equal(np.dtype(user_def_subcls).name, 'user_def_subcls')
 
+    def test_zero_stride(self):
+        arr = np.ones(1, dtype="i8")
+        arr = np.broadcast_to(arr, 10)
+        assert arr.strides == (0,)
+        with pytest.raises(ValueError):
+            arr.dtype = "i1"
+
+class TestDTypeMakeCanonical:
+    def check_canonical(self, dtype, canonical):
+        """
+        Check most properties relevant to "canonical" versions of a dtype,
+        which is mainly native byte order for datatypes supporting this.
+
+        The main work is checking structured dtypes with fields, where we
+        reproduce most the actual logic used in the C-code.
+        """
+        assert type(dtype) is type(canonical)
+
+        # a canonical DType should always have equivalent casting (both ways)
+        assert np.can_cast(dtype, canonical, casting="equiv")
+        assert np.can_cast(canonical, dtype, casting="equiv")
+        # a canonical dtype (and its fields) is always native (checks fields):
+        assert canonical.isnative
+
+        # Check that canonical of canonical is the same (no casting):
+        assert np.result_type(canonical) == canonical
+
+        if not dtype.names:
+            # The flags currently never change for unstructured dtypes
+            assert dtype.flags == canonical.flags
+            return
+
+        # Must have all the needs API flag set:
+        assert dtype.flags & 0b10000
+
+        # Check that the fields are identical (including titles):
+        assert dtype.fields.keys() == canonical.fields.keys()
+
+        def aligned_offset(offset, alignment):
+            # round up offset:
+            return - (-offset // alignment) * alignment
+
+        totalsize = 0
+        max_alignment = 1
+        for name in dtype.names:
+            # each field is also canonical:
+            new_field_descr = canonical.fields[name][0]
+            self.check_canonical(dtype.fields[name][0], new_field_descr)
+
+            # Must have the "inherited" object related flags:
+            expected = 0b11011 & new_field_descr.flags
+            assert (canonical.flags & expected) == expected
+
+            if canonical.isalignedstruct:
+                totalsize = aligned_offset(totalsize, new_field_descr.alignment)
+                max_alignment = max(new_field_descr.alignment, max_alignment)
+
+            assert canonical.fields[name][1] == totalsize
+            # if a title exists, they must match (otherwise empty tuple):
+            assert dtype.fields[name][2:] == canonical.fields[name][2:]
+
+            totalsize += new_field_descr.itemsize
+
+        if canonical.isalignedstruct:
+            totalsize = aligned_offset(totalsize, max_alignment)
+        assert canonical.itemsize == totalsize
+        assert canonical.alignment == max_alignment
+
+    def test_simple(self):
+        dt = np.dtype(">i4")
+        assert np.result_type(dt).isnative
+        assert np.result_type(dt).num == dt.num
+
+        # dtype with empty space:
+        struct_dt = np.dtype(">i4,<i1,i8,V3")[["f0", "f2"]]
+        canonical = np.result_type(struct_dt)
+        assert canonical.itemsize == 4+8
+        assert canonical.isnative
+
+        # aligned struct dtype with empty space:
+        struct_dt = np.dtype(">i1,<i4,i8,V3", align=True)[["f0", "f2"]]
+        canonical = np.result_type(struct_dt)
+        assert canonical.isalignedstruct
+        assert canonical.itemsize == np.dtype("i8").alignment + 8
+        assert canonical.isnative
+
+    def test_object_flag_not_inherited(self):
+        # The following dtype still indicates "object", because its included
+        # in the unaccessible space (maybe this could change at some point):
+        arr = np.ones(3, "i,O,i")[["f0", "f2"]]
+        assert arr.dtype.hasobject
+        canonical_dt = np.result_type(arr.dtype)
+        assert not canonical_dt.hasobject
+
+    @pytest.mark.slow
+    @hypothesis.given(dtype=hynp.nested_dtypes())
+    def test_make_canonical_hypothesis(self, dtype):
+        canonical = np.result_type(dtype)
+        self.check_canonical(dtype, canonical)
+        # result_type with two arguments should always give identical results:
+        two_arg_result = np.result_type(dtype, dtype)
+        assert np.can_cast(two_arg_result, canonical, casting="no")
+
+    @pytest.mark.slow
+    @hypothesis.given(
+            dtype=hypothesis.extra.numpy.array_dtypes(
+                subtype_strategy=hypothesis.extra.numpy.array_dtypes(),
+                min_size=5, max_size=10, allow_subarrays=True))
+    def test_structured(self, dtype):
+        # Pick 4 of the fields at random.  This will leave empty space in the
+        # dtype (since we do not canonicalize it here).
+        field_subset = random.sample(dtype.names, k=4)
+        dtype_with_empty_space = dtype[field_subset]
+        assert dtype_with_empty_space.itemsize == dtype.itemsize
+        canonicalized = np.result_type(dtype_with_empty_space)
+        self.check_canonical(dtype_with_empty_space, canonicalized)
+        # promotion with two arguments should always give identical results:
+        two_arg_result = np.promote_types(
+                dtype_with_empty_space, dtype_with_empty_space)
+        assert np.can_cast(two_arg_result, canonicalized, casting="no")
+
+        # Ensure that we also check aligned struct (check the opposite, in
+        # case hypothesis grows support for `align`.  Then repeat the test:
+        dtype_aligned = np.dtype(dtype.descr, align=not dtype.isalignedstruct)
+        dtype_with_empty_space = dtype_aligned[field_subset]
+        assert dtype_with_empty_space.itemsize == dtype_aligned.itemsize
+        canonicalized = np.result_type(dtype_with_empty_space)
+        self.check_canonical(dtype_with_empty_space, canonicalized)
+        # promotion with two arguments should always give identical results:
+        two_arg_result = np.promote_types(
+            dtype_with_empty_space, dtype_with_empty_space)
+        assert np.can_cast(two_arg_result, canonicalized, casting="no")
+
 
 class TestPickling:
 
@@ -1139,25 +1320,34 @@ class TestPromotion:
     """Test cases related to more complex DType promotions.  Further promotion
     tests are defined in `test_numeric.py`
     """
-    @pytest.mark.parametrize(["other", "expected"],
-            [(2**16-1, np.complex64),
-             (2**32-1, np.complex128),
-             (np.float16(2), np.complex64),
-             (np.float32(2), np.complex64),
-             (np.longdouble(2), np.complex64),
+    @np._no_nep50_warning()
+    @pytest.mark.parametrize(["other", "expected", "expected_weak"],
+            [(2**16-1, np.complex64, None),
+             (2**32-1, np.complex128, np.complex64),
+             (np.float16(2), np.complex64, None),
+             (np.float32(2), np.complex64, None),
+             (np.longdouble(2), np.complex64, np.clongdouble),
              # Base of the double value to sidestep any rounding issues:
-             (np.longdouble(np.nextafter(1.7e308, 0.)), np.complex128),
+             (np.longdouble(np.nextafter(1.7e308, 0.)),
+                  np.complex128, np.clongdouble),
              # Additionally use "nextafter" so the cast can't round down:
-             (np.longdouble(np.nextafter(1.7e308, np.inf)), np.clongdouble),
+             (np.longdouble(np.nextafter(1.7e308, np.inf)),
+                  np.clongdouble, None),
              # repeat for complex scalars:
-             (np.complex64(2), np.complex64),
-             (np.clongdouble(2), np.complex64),
+             (np.complex64(2), np.complex64, None),
+             (np.clongdouble(2), np.complex64, np.clongdouble),
              # Base of the double value to sidestep any rounding issues:
-             (np.clongdouble(np.nextafter(1.7e308, 0.) * 1j), np.complex128),
+             (np.clongdouble(np.nextafter(1.7e308, 0.) * 1j),
+                  np.complex128, np.clongdouble),
              # Additionally use "nextafter" so the cast can't round down:
-             (np.clongdouble(np.nextafter(1.7e308, np.inf)), np.clongdouble),
+             (np.clongdouble(np.nextafter(1.7e308, np.inf)),
+                  np.clongdouble, None),
              ])
-    def test_complex_other_value_based(self, other, expected):
+    def test_complex_other_value_based(self,
+            weak_promotion, other, expected, expected_weak):
+        if weak_promotion and expected_weak is not None:
+            expected = expected_weak
+
         # This would change if we modify the value based promotion
         min_complex = np.dtype(np.complex64)
 
@@ -1190,22 +1380,40 @@ class TestPromotion:
 
     def test_complex_pyscalar_promote_rational(self):
         with pytest.raises(TypeError,
-                match=r".* do not have a common DType"):
+                match=r".* no common DType exists for the given inputs"):
             np.result_type(1j, rational)
 
         with pytest.raises(TypeError,
                 match=r".* no common DType exists for the given inputs"):
             np.result_type(1j, rational(1, 2))
 
+    @pytest.mark.parametrize("val", [2, 2**32, 2**63, 2**64, 2*100])
+    def test_python_integer_promotion(self, val):
+        # If we only path scalars (mainly python ones!), the result must take
+        # into account that the integer may be considered int32, int64, uint64,
+        # or object depending on the input value.  So test those paths!
+        expected_dtype = np.result_type(np.array(val).dtype, np.array(0).dtype)
+        assert np.result_type(val, 0) == expected_dtype
+        # For completeness sake, also check with a NumPy scalar as second arg:
+        assert np.result_type(val, np.int8(0)) == expected_dtype
+
     @pytest.mark.parametrize(["other", "expected"],
             [(1, rational), (1., np.float64)])
-    def test_float_int_pyscalar_promote_rational(self, other, expected):
+    @np._no_nep50_warning()
+    def test_float_int_pyscalar_promote_rational(
+            self, weak_promotion, other, expected):
         # Note that rationals are a bit akward as they promote with float64
         # or default ints, but not float16 or uint8/int8 (which looks
-        # inconsistent here)
-        with pytest.raises(TypeError,
-                match=r".* do not have a common DType"):
-            np.result_type(other, rational)
+        # inconsistent here).  The new promotion fixes this (partially?)
+        if not weak_promotion and type(other) == float:
+            # The float version, checks float16 in the legacy path, which fails
+            # the integer version seems to check int8 (also), so it can
+            # pass.
+            with pytest.raises(TypeError,
+                    match=r".* do not have a common DType"):
+                np.result_type(other, rational)
+        else:
+            assert np.result_type(other, rational) == expected
 
         assert np.result_type(other, rational(1, 2)) == expected
 
@@ -1252,12 +1460,17 @@ def test_dtypes_are_true():
 def test_invalid_dtype_string():
     # test for gh-10440
     assert_raises(TypeError, np.dtype, 'f8,i8,[f8,i8]')
-    assert_raises(TypeError, np.dtype, u'Fl\xfcgel')
+    assert_raises(TypeError, np.dtype, 'Fl\xfcgel')
 
 
 def test_keyword_argument():
     # test for https://github.com/numpy/numpy/pull/16574#issuecomment-642660971
     assert np.dtype(dtype=np.float64) == np.dtype(np.float64)
+
+
+def test_ulong_dtype():
+    # test for gh-21063
+    assert np.dtype("ulong") == np.dtype(np.uint)
 
 
 class TestFromDTypeAttribute:

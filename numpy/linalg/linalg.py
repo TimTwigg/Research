@@ -21,10 +21,11 @@ import warnings
 from numpy.core import (
     array, asarray, zeros, empty, empty_like, intc, single, double,
     csingle, cdouble, inexact, complexfloating, newaxis, all, Inf, dot,
-    add, multiply, sqrt, fastCopyAndTranspose, sum, isfinite,
+    add, multiply, sqrt, sum, isfinite,
     finfo, errstate, geterrobj, moveaxis, amin, amax, product, abs,
     atleast_2d, intp, asanyarray, object_, matmul,
-    swapaxes, divide, count_nonzero, isnan, sign, argsort, sort
+    swapaxes, divide, count_nonzero, isnan, sign, argsort, sort,
+    reciprocal
 )
 from numpy.core.multiarray import normalize_axis_index
 from numpy.core.overrides import set_module
@@ -157,10 +158,6 @@ def _commonType(*arrays):
     return t, result_type
 
 
-# _fastCopyAndTranpose assumes the input is 2D (as all the calls in here are).
-
-_fastCT = fastCopyAndTranspose
-
 def _to_native_byte_order(*arrays):
     ret = []
     for arr in arrays:
@@ -173,16 +170,6 @@ def _to_native_byte_order(*arrays):
     else:
         return ret
 
-def _fastCopyAndTranspose(type, *arrays):
-    cast_arrays = ()
-    for a in arrays:
-        if a.dtype.type is not type:
-            a = a.astype(type)
-        cast_arrays = cast_arrays + (_fastCT(a),)
-    if len(cast_arrays) == 1:
-        return cast_arrays[0]
-    else:
-        return cast_arrays
 
 def _assert_2d(*arrays):
     for a in arrays:
@@ -242,7 +229,7 @@ def tensorsolve(a, b, axes=None):
 
     It is assumed that all indices of `x` are summed over in the product,
     together with the rightmost indices of `a`, as is done in, for example,
-    ``tensordot(a, x, axes=b.ndim)``.
+    ``tensordot(a, x, axes=x.ndim)``.
 
     Parameters
     ----------
@@ -299,7 +286,13 @@ def tensorsolve(a, b, axes=None):
     for k in oldshape:
         prod *= k
 
-    a = a.reshape(-1, prod)
+    if a.size != prod ** 2:
+        raise LinAlgError(
+            "Input arrays must satisfy the requirement \
+            prod(a.shape[b.ndim:]) == prod(a.shape[:b.ndim])"
+        )
+
+    a = a.reshape(prod, prod)
     b = b.ravel()
     res = wrap(solve(a, b))
     res.shape = oldshape
@@ -691,8 +684,8 @@ def cholesky(a):
     Returns
     -------
     L : (..., M, M) array_like
-        Upper or lower-triangular Cholesky factor of `a`.  Returns a
-        matrix object if `a` is a matrix object.
+        Lower-triangular Cholesky factor of `a`.  Returns a matrix object if
+        `a` is a matrix object.
 
     Raises
     ------
@@ -893,11 +886,11 @@ def qr(a, mode='reduced'):
            [1, 1],
            [1, 1],
            [2, 1]])
-    >>> b = np.array([1, 0, 2, 1])
+    >>> b = np.array([1, 2, 2, 3])
     >>> q, r = np.linalg.qr(A)
     >>> p = np.dot(q.T, b)
     >>> np.dot(np.linalg.inv(r), p)
-    array([  1.1e-16,   1.0e+00])
+    array([  1.,   1.])
 
     """
     if mode not in ('reduced', 'complete', 'r', 'raw'):
@@ -1165,7 +1158,7 @@ def eigvalsh(a, UPLO='L'):
 
 def _convertarray(a):
     t, result_t = _commonType(a)
-    a = _fastCT(a.astype(t))
+    a = a.astype(t).T.copy()
     return a, t, result_t
 
 
@@ -1472,10 +1465,12 @@ def svd(a, full_matrices=True, compute_uv=True, hermitian=False):
     """
     Singular Value Decomposition.
 
-    When `a` is a 2D array, it is factorized as ``u @ np.diag(s) @ vh
-    = (u * s) @ vh``, where `u` and `vh` are 2D unitary arrays and `s` is a 1D
-    array of `a`'s singular values. When `a` is higher-dimensional, SVD is
-    applied in stacked mode as explained below.
+    When `a` is a 2D array, and ``full_matrices=False``, then it is
+    factorized as ``u @ np.diag(s) @ vh = (u * s) @ vh``, where
+    `u` and the Hermitian transpose of `vh` are 2D arrays with
+    orthonormal columns and `s` is a 1D array of `a`'s singular
+    values. When `a` is higher-dimensional, SVD is applied in
+    stacked mode as explained below.
 
     Parameters
     ----------
@@ -1622,7 +1617,6 @@ def svd(a, full_matrices=True, compute_uv=True, hermitian=False):
             return wrap(u), s, wrap(vt)
         else:
             s = eigvalsh(a)
-            s = s[..., ::-1]
             s = abs(s)
             return sort(s)[..., ::-1]
 
@@ -1942,7 +1936,6 @@ def pinv(a, rcond=1e-15, hermitian=False):
     See Also
     --------
     scipy.linalg.pinv : Similar function in SciPy.
-    scipy.linalg.pinv2 : Similar function in SciPy (SVD-based).
     scipy.linalg.pinvh : Compute the (Moore-Penrose) pseudo-inverse of a
                          Hermitian matrix.
 
@@ -2511,9 +2504,11 @@ def norm(x, ord=None, axis=None, keepdims=False):
 
             x = x.ravel(order='K')
             if isComplexType(x.dtype.type):
-                sqnorm = dot(x.real, x.real) + dot(x.imag, x.imag)
+                x_real = x.real
+                x_imag = x.imag
+                sqnorm = x_real.dot(x_real) + x_imag.dot(x_imag)
             else:
-                sqnorm = dot(x, x)
+                sqnorm = x.dot(x)
             ret = sqrt(sqnorm)
             if keepdims:
                 ret = ret.reshape(ndim*[1])
@@ -2553,7 +2548,7 @@ def norm(x, ord=None, axis=None, keepdims=False):
             absx = abs(x)
             absx **= ord
             ret = add.reduce(absx, axis=axis, keepdims=keepdims)
-            ret **= (1 / ord)
+            ret **= reciprocal(ord, dtype=ret.dtype)
             return ret
     elif len(axis) == 2:
         row_axis, col_axis = axis

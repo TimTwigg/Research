@@ -188,9 +188,8 @@ def _divide_by_count(a, b, out=None):
     """
     Compute a/b ignoring invalid results. If `a` is an array the division
     is done in place. If `a` is a scalar, then its type is preserved in the
-    output. If out is None, then then a is used instead so that the
-    division is in place. Note that this is only called with `a` an inexact
-    type.
+    output. If out is None, then a is used instead so that the division
+    is in place. Note that this is only called with `a` an inexact type.
 
     Parameters
     ----------
@@ -1215,12 +1214,9 @@ def nanmedian(a, axis=None, out=None, overwrite_input=False, keepdims=np._NoValu
     if a.size == 0:
         return np.nanmean(a, axis, out=out, keepdims=keepdims)
 
-    r, k = function_base._ureduce(a, func=_nanmedian, axis=axis, out=out,
+    return function_base._ureduce(a, func=_nanmedian, keepdims=keepdims,
+                                  axis=axis, out=out,
                                   overwrite_input=overwrite_input)
-    if keepdims and keepdims is not np._NoValue:
-        return r.reshape(k)
-    else:
-        return r
 
 
 def _nanpercentile_dispatcher(
@@ -1286,7 +1282,7 @@ def nanpercentile(
         8. 'median_unbiased'
         9. 'normal_unbiased'
 
-        The first three methods are discontiuous.  NumPy further defines the
+        The first three methods are discontinuous.  NumPy further defines the
         following discontinuous variations of the default 'linear' (7.) option:
 
         * 'lower'
@@ -1446,7 +1442,7 @@ def nanquantile(
         8. 'median_unbiased'
         9. 'normal_unbiased'
 
-        The first three methods are discontiuous.  NumPy further defines the
+        The first three methods are discontinuous.  NumPy further defines the
         following discontinuous variations of the default 'linear' (7.) option:
 
         * 'lower'
@@ -1557,17 +1553,14 @@ def _nanquantile_unchecked(
     # so deal them upfront
     if a.size == 0:
         return np.nanmean(a, axis, out=out, keepdims=keepdims)
-    r, k = function_base._ureduce(a,
+    return function_base._ureduce(a,
                                   func=_nanquantile_ureduce_func,
                                   q=q,
+                                  keepdims=keepdims,
                                   axis=axis,
                                   out=out,
                                   overwrite_input=overwrite_input,
                                   method=method)
-    if keepdims and keepdims is not np._NoValue:
-        return r.reshape(q.shape + k)
-    else:
-        return r
 
 
 def _nanquantile_ureduce_func(a, q, axis=None, out=None, overwrite_input=False,

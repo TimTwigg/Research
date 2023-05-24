@@ -1,4 +1,5 @@
-from typing import Any, List, TypeVar
+import datetime as dt
+from typing import Any, TypeVar
 from pathlib import Path
 
 import numpy as np
@@ -16,8 +17,8 @@ AR_u1: npt.NDArray[np.uint8]
 AR_m: npt.NDArray[np.timedelta64]
 AR_M: npt.NDArray[np.datetime64]
 
-AR_LIKE_f: List[float]
-AR_LIKE_i: List[int]
+AR_LIKE_f: list[float]
+AR_LIKE_i: list[int]
 
 m: np.timedelta64
 M: np.datetime64
@@ -27,31 +28,35 @@ b_i8_f8_f8 = np.broadcast(AR_i8, AR_f8, AR_f8)
 
 nditer_obj: np.nditer
 
+date_scalar: dt.date
+date_seq: list[dt.date]
+timedelta_seq: list[dt.timedelta]
+
 def func(a: int) -> bool: ...
 
-reveal_type(next(b_f8))  # E: tuple[Any]
+reveal_type(next(b_f8))  # E: tuple[Any, ...]
 reveal_type(b_f8.reset())  # E: None
 reveal_type(b_f8.index)  # E: int
-reveal_type(b_f8.iters)  # E: tuple[flatiter[Any]]
+reveal_type(b_f8.iters)  # E: tuple[flatiter[Any], ...]
 reveal_type(b_f8.nd)  # E: int
 reveal_type(b_f8.ndim)  # E: int
 reveal_type(b_f8.numiter)  # E: int
-reveal_type(b_f8.shape)  # E: tuple[builtins.int]
+reveal_type(b_f8.shape)  # E: tuple[builtins.int, ...]
 reveal_type(b_f8.size)  # E: int
 
-reveal_type(next(b_i8_f8_f8))  # E: tuple[Any]
+reveal_type(next(b_i8_f8_f8))  # E: tuple[Any, ...]
 reveal_type(b_i8_f8_f8.reset())  # E: None
 reveal_type(b_i8_f8_f8.index)  # E: int
-reveal_type(b_i8_f8_f8.iters)  # E: tuple[flatiter[Any]]
+reveal_type(b_i8_f8_f8.iters)  # E: tuple[flatiter[Any], ...]
 reveal_type(b_i8_f8_f8.nd)  # E: int
 reveal_type(b_i8_f8_f8.ndim)  # E: int
 reveal_type(b_i8_f8_f8.numiter)  # E: int
-reveal_type(b_i8_f8_f8.shape)  # E: tuple[builtins.int]
+reveal_type(b_i8_f8_f8.shape)  # E: tuple[builtins.int, ...]
 reveal_type(b_i8_f8_f8.size)  # E: int
 
 reveal_type(np.inner(AR_f8, AR_i8))  # E: Any
 
-reveal_type(np.where([True, True, False]))  # E: tuple[ndarray[Any, dtype[{intp}]]]
+reveal_type(np.where([True, True, False]))  # E: tuple[ndarray[Any, dtype[{intp}]], ...]
 reveal_type(np.where([True, True, False], 1, 0))  # E: ndarray[Any, dtype[Any]]
 
 reveal_type(np.lexsort([0, 1, 2]))  # E: Any
@@ -108,25 +113,32 @@ reveal_type(np.datetime_data(np.dtype(np.timedelta64)))  # E: Tuple[builtins.str
 
 reveal_type(np.busday_count("2011-01", "2011-02"))  # E: {int_}
 reveal_type(np.busday_count(["2011-01"], "2011-02"))  # E: ndarray[Any, dtype[{int_}]]
+reveal_type(np.busday_count(["2011-01"], date_scalar))  # E: ndarray[Any, dtype[{int_}]]
 
 reveal_type(np.busday_offset(M, m))  # E: datetime64
+reveal_type(np.busday_offset(date_scalar, m))  # E: datetime64
 reveal_type(np.busday_offset(M, 5))  # E: datetime64
 reveal_type(np.busday_offset(AR_M, m))  # E: ndarray[Any, dtype[datetime64]]
+reveal_type(np.busday_offset(M, timedelta_seq))  # E: ndarray[Any, dtype[datetime64]]
 reveal_type(np.busday_offset("2011-01", "2011-02", roll="forward"))  # E: datetime64
 reveal_type(np.busday_offset(["2011-01"], "2011-02", roll="forward"))  # E: ndarray[Any, dtype[datetime64]]
 
 reveal_type(np.is_busday("2012"))  # E: bool_
+reveal_type(np.is_busday(date_scalar))  # E: bool_
 reveal_type(np.is_busday(["2012"]))  # E: ndarray[Any, dtype[bool_]]
 
 reveal_type(np.datetime_as_string(M))  # E: str_
 reveal_type(np.datetime_as_string(AR_M))  # E: ndarray[Any, dtype[str_]]
+
+reveal_type(np.busdaycalendar(holidays=date_seq))  # E: busdaycalendar
+reveal_type(np.busdaycalendar(holidays=[M]))  # E: busdaycalendar
 
 reveal_type(np.compare_chararrays("a", "b", "!=", rstrip=False))  # E: ndarray[Any, dtype[bool_]]
 reveal_type(np.compare_chararrays(b"a", b"a", "==", True))  # E: ndarray[Any, dtype[bool_]]
 
 reveal_type(np.add_docstring(func, "test"))  # E: None
 
-reveal_type(np.nested_iters([AR_i8, AR_i8], [[0], [1]], flags=["c_index"]))  # E: tuple[nditer]
-reveal_type(np.nested_iters([AR_i8, AR_i8], [[0], [1]], op_flags=[["readonly", "readonly"]]))  # E: tuple[nditer]
-reveal_type(np.nested_iters([AR_i8, AR_i8], [[0], [1]], op_dtypes=np.int_))  # E: tuple[nditer]
-reveal_type(np.nested_iters([AR_i8, AR_i8], [[0], [1]], order="C", casting="no"))  # E: tuple[nditer]
+reveal_type(np.nested_iters([AR_i8, AR_i8], [[0], [1]], flags=["c_index"]))  # E: tuple[nditer, ...]
+reveal_type(np.nested_iters([AR_i8, AR_i8], [[0], [1]], op_flags=[["readonly", "readonly"]]))  # E: tuple[nditer, ...]
+reveal_type(np.nested_iters([AR_i8, AR_i8], [[0], [1]], op_dtypes=np.int_))  # E: tuple[nditer, ...]
+reveal_type(np.nested_iters([AR_i8, AR_i8], [[0], [1]], order="C", casting="no"))  # E: tuple[nditer, ...]

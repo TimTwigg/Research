@@ -83,10 +83,6 @@ class _NoValueType:
             cls.__instance = super().__new__(cls)
         return cls.__instance
 
-    # needed for python 2 to preserve identity through a pickle
-    def __reduce__(self):
-        return (self.__class__, ())
-
     def __repr__(self):
         return "<no value>"
 
@@ -116,7 +112,7 @@ class _CopyMode(enum.Enum):
     NEVER = 2
 
     def __bool__(self):
-        # For backwards compatiblity
+        # For backwards compatibility
         if self == _CopyMode.ALWAYS:
             return True
 

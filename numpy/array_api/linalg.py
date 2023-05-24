@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from ._dtypes import _floating_dtypes, _numeric_dtypes
+from ._manipulation_functions import reshape
 from ._array_object import Array
+
+from ..core.numeric import normalize_axis_tuple
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -89,7 +92,6 @@ def diagonal(x: Array, /, *, offset: int = 0) -> Array:
     return Array._new(np.diagonal(x._array, offset=offset, axis1=-2, axis2=-1))
 
 
-# Note: the keyword argument name upper is different from np.linalg.eigh
 def eigh(x: Array, /) -> EighResult:
     """
     Array API compatible wrapper for :py:func:`np.linalg.eigh <numpy.linalg.eigh>`.
@@ -106,7 +108,6 @@ def eigh(x: Array, /) -> EighResult:
     return EighResult(*map(Array._new, np.linalg.eigh(x._array)))
 
 
-# Note: the keyword argument name upper is different from np.linalg.eigvalsh
 def eigvalsh(x: Array, /) -> Array:
     """
     Array API compatible wrapper for :py:func:`np.linalg.eigvalsh <numpy.linalg.eigvalsh>`.
@@ -346,6 +347,8 @@ def svd(x: Array, /, *, full_matrices: bool = True) -> SVDResult:
 # Note: svdvals is not in NumPy (but it is in SciPy). It is equivalent to
 # np.linalg.svd(compute_uv=False).
 def svdvals(x: Array, /) -> Union[Array, Tuple[Array, ...]]:
+    if x.dtype not in _floating_dtypes:
+        raise TypeError('Only floating-point dtypes are allowed in svdvals')
     return Array._new(np.linalg.svd(x._array, compute_uv=False))
 
 # Note: tensordot is the numpy top-level namespace but not in np.linalg
@@ -366,13 +369,28 @@ def trace(x: Array, /, *, offset: int = 0) -> Array:
 
     See its docstring for more information.
     """
+    if x.dtype not in _numeric_dtypes:
+        raise TypeError('Only numeric dtypes are allowed in trace')
     # Note: trace always operates on the last two axes, whereas np.trace
     # operates on the first two axes by default
     return Array._new(np.asarray(np.trace(x._array, offset=offset, axis1=-2, axis2=-1)))
 
 # Note: vecdot is not in NumPy
 def vecdot(x1: Array, x2: Array, /, *, axis: int = -1) -> Array:
-    return tensordot(x1, x2, axes=((axis,), (axis,)))
+    if x1.dtype not in _numeric_dtypes or x2.dtype not in _numeric_dtypes:
+        raise TypeError('Only numeric dtypes are allowed in vecdot')
+    ndim = max(x1.ndim, x2.ndim)
+    x1_shape = (1,)*(ndim - x1.ndim) + tuple(x1.shape)
+    x2_shape = (1,)*(ndim - x2.ndim) + tuple(x2.shape)
+    if x1_shape[axis] != x2_shape[axis]:
+        raise ValueError("x1 and x2 must have the same size along the given axis")
+
+    x1_, x2_ = np.broadcast_arrays(x1._array, x2._array)
+    x1_ = np.moveaxis(x1_, axis, -1)
+    x2_ = np.moveaxis(x2_, axis, -1)
+
+    res = x1_[..., None, :] @ x2_[..., None]
+    return Array._new(res[..., 0, 0])
 
 
 # Note: the name here is different from norm(). The array API norm is split
@@ -380,7 +398,7 @@ def vecdot(x1: Array, x2: Array, /, *, axis: int = -1) -> Array:
 
 # The type for ord should be Optional[Union[int, float, Literal[np.inf,
 # -np.inf]]] but Literal does not support floating-point literals.
-def vector_norm(x: Array, /, *, axis: Optional[Union[int, Tuple[int, int]]] = None, keepdims: bool = False, ord: Optional[Union[int, float]] = 2) -> Array:
+def vector_norm(x: Array, /, *, axis: Optional[Union[int, Tuple[int, ...]]] = None, keepdims: bool = False, ord: Optional[Union[int, float]] = 2) -> Array:
     """
     Array API compatible wrapper for :py:func:`np.linalg.norm <numpy.linalg.norm>`.
 
@@ -391,18 +409,38 @@ def vector_norm(x: Array, /, *, axis: Optional[Union[int, Tuple[int, int]]] = No
     if x.dtype not in _floating_dtypes:
         raise TypeError('Only floating-point dtypes are allowed in norm')
 
+    # np.linalg.norm tries to do a matrix norm whenever axis is a 2-tuple or
+    # when axis=None and the input is 2-D, so to force a vector norm, we make
+    # it so the input is 1-D (for axis=None), or reshape so that norm is done
+    # on a single dimension.
     a = x._array
     if axis is None:
-        a = a.flatten()
-        axis = 0
+        # Note: np.linalg.norm() doesn't handle 0-D arrays
+        a = a.ravel()
+        _axis = 0
     elif isinstance(axis, tuple):
-        # Note: The axis argument supports any number of axes, whereas norm()
-        # only supports a single axis for vector norm.
-        rest = tuple(i for i in range(a.ndim) if i not in axis)
+        # Note: The axis argument supports any number of axes, whereas
+        # np.linalg.norm() only supports a single axis for vector norm.
+        normalized_axis = normalize_axis_tuple(axis, x.ndim)
+        rest = tuple(i for i in range(a.ndim) if i not in normalized_axis)
         newshape = axis + rest
-        a = np.transpose(a, newshape).reshape((np.prod([a.shape[i] for i in axis]), *[a.shape[i] for i in rest]))
-        axis = 0
-    return Array._new(np.linalg.norm(a, axis=axis, keepdims=keepdims, ord=ord))
+        a = np.transpose(a, newshape).reshape(
+            (np.prod([a.shape[i] for i in axis], dtype=int), *[a.shape[i] for i in rest]))
+        _axis = 0
+    else:
+        _axis = axis
 
+    res = Array._new(np.linalg.norm(a, axis=_axis, ord=ord))
+
+    if keepdims:
+        # We can't reuse np.linalg.norm(keepdims) because of the reshape hacks
+        # above to avoid matrix norm logic.
+        shape = list(x.shape)
+        _axis = normalize_axis_tuple(range(x.ndim) if axis is None else axis, x.ndim)
+        for i in _axis:
+            shape[i] = 1
+        res = reshape(res, tuple(shape))
+
+    return res
 
 __all__ = ['cholesky', 'cross', 'det', 'diagonal', 'eigh', 'eigvalsh', 'inv', 'matmul', 'matrix_norm', 'matrix_power', 'matrix_rank', 'matrix_transpose', 'outer', 'pinv', 'qr', 'slogdet', 'solve', 'svd', 'svdvals', 'tensordot', 'trace', 'vecdot', 'vector_norm']

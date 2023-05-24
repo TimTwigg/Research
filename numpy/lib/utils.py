@@ -4,6 +4,7 @@ import textwrap
 import types
 import re
 import warnings
+import functools
 
 from numpy.core.numerictypes import issubclass_, issubsctype, issubdtype
 from numpy.core.overrides import set_module
@@ -13,8 +14,85 @@ import numpy as np
 __all__ = [
     'issubclass_', 'issubsctype', 'issubdtype', 'deprecate',
     'deprecate_with_doc', 'get_include', 'info', 'source', 'who',
-    'lookfor', 'byte_bounds', 'safe_eval'
+    'lookfor', 'byte_bounds', 'safe_eval', 'show_runtime'
     ]
+
+
+def show_runtime():
+    """
+    Print information about various resources in the system
+    including available intrinsic support and BLAS/LAPACK library
+    in use
+
+    See Also
+    --------
+    show_config : Show libraries in the system on which NumPy was built.
+
+    Notes
+    -----
+    1. Information is derived with the help of `threadpoolctl <https://pypi.org/project/threadpoolctl/>`_
+       library.
+    2. SIMD related information is derived from ``__cpu_features__``,
+       ``__cpu_baseline__`` and ``__cpu_dispatch__``
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> np.show_runtime()
+    [{'simd_extensions': {'baseline': ['SSE', 'SSE2', 'SSE3'],
+                          'found': ['SSSE3',
+                                    'SSE41',
+                                    'POPCNT',
+                                    'SSE42',
+                                    'AVX',
+                                    'F16C',
+                                    'FMA3',
+                                    'AVX2'],
+                          'not_found': ['AVX512F',
+                                        'AVX512CD',
+                                        'AVX512_KNL',
+                                        'AVX512_KNM',
+                                        'AVX512_SKX',
+                                        'AVX512_CLX',
+                                        'AVX512_CNL',
+                                        'AVX512_ICL']}},
+     {'architecture': 'Zen',
+      'filepath': '/usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.20.so',
+      'internal_api': 'openblas',
+      'num_threads': 12,
+      'prefix': 'libopenblas',
+      'threading_layer': 'pthreads',
+      'user_api': 'blas',
+      'version': '0.3.20'}]
+    """
+    from numpy.core._multiarray_umath import (
+        __cpu_features__, __cpu_baseline__, __cpu_dispatch__
+    )
+    from pprint import pprint
+    config_found = []
+    features_found, features_not_found = [], []
+    for feature in __cpu_dispatch__:
+        if __cpu_features__[feature]:
+            features_found.append(feature)
+        else:
+            features_not_found.append(feature)
+    config_found.append({
+        "simd_extensions": {
+            "baseline": __cpu_baseline__,
+            "found": features_found,
+            "not_found": features_not_found
+        }
+    })
+    try:
+        from threadpoolctl import threadpool_info
+        config_found.extend(threadpool_info())
+    except ImportError:
+        print("WARNING: `threadpoolctl` not found in system!"
+              " Install it by `pip install threadpoolctl`."
+              " Once installed, try `np.show_runtime` again"
+              " for more detailed build information")
+    pprint(config_found)
+
 
 def get_include():
     """
@@ -25,8 +103,7 @@ def get_include():
 
     Notes
     -----
-    When using ``distutils``, for example in ``setup.py``.
-    ::
+    When using ``distutils``, for example in ``setup.py``::
 
         import numpy as np
         ...
@@ -44,11 +121,6 @@ def get_include():
         import numpy.core as core
         d = os.path.join(os.path.dirname(core.__file__), 'include')
     return d
-
-
-def _set_function_name(func, name):
-    func.__name__ = name
-    return func
 
 
 class _Deprecate:
@@ -78,10 +150,7 @@ class _Deprecate:
         message = self.message
 
         if old_name is None:
-            try:
-                old_name = func.__name__
-            except AttributeError:
-                old_name = func.__name__
+            old_name = func.__name__
         if new_name is None:
             depdoc = "`%s` is deprecated!" % old_name
         else:
@@ -91,12 +160,12 @@ class _Deprecate:
         if message is not None:
             depdoc += "\n" + message
 
-        def newfunc(*args,**kwds):
-            """`arrayrange` is deprecated, use `arange` instead!"""
+        @functools.wraps(func)
+        def newfunc(*args, **kwds):
             warnings.warn(depdoc, DeprecationWarning, stacklevel=2)
             return func(*args, **kwds)
 
-        newfunc = _set_function_name(newfunc, old_name)
+        newfunc.__name__ = old_name
         doc = func.__doc__
         if doc is None:
             doc = depdoc
@@ -118,12 +187,7 @@ class _Deprecate:
             depdoc = textwrap.indent(depdoc, ' ' * indent)
             doc = '\n\n'.join([depdoc, doc])
         newfunc.__doc__ = doc
-        try:
-            d = func.__dict__
-        except AttributeError:
-            pass
-        else:
-            newfunc.__dict__.update(d)
+
         return newfunc
 
 
@@ -429,7 +493,7 @@ def _makenamedict(module='numpy'):
     return thedict, dictlist
 
 
-def _info(obj, output=sys.stdout):
+def _info(obj, output=None):
     """Provide information about ndarray obj.
 
     Parameters
@@ -454,6 +518,9 @@ def _info(obj, output=sys.stdout):
     nm = getattr(cls, '__name__', cls)
     strides = obj.strides
     endian = obj.dtype.byteorder
+
+    if output is None:
+        output = sys.stdout
 
     print("class: ", nm, file=output)
     print("shape: ", obj.shape, file=output)
@@ -481,7 +548,7 @@ def _info(obj, output=sys.stdout):
 
 
 @set_module('numpy')
-def info(object=None, maxwidth=76, output=sys.stdout, toplevel='numpy'):
+def info(object=None, maxwidth=76, output=None, toplevel='numpy'):
     """
     Get help information for a function, class, or module.
 
@@ -496,7 +563,8 @@ def info(object=None, maxwidth=76, output=sys.stdout, toplevel='numpy'):
         Printing width.
     output : file like object, optional
         File like object that the output is written to, default is
-        ``stdout``.  The object has to be opened in 'w' or 'a' mode.
+        ``None``, in which case ``sys.stdout`` will be used.
+        The object has to be opened in 'w' or 'a' mode.
     toplevel : str, optional
         Start search at this level.
 
@@ -540,6 +608,9 @@ def info(object=None, maxwidth=76, output=sys.stdout, toplevel='numpy'):
         object = object._ppimport_module
     elif hasattr(object, '_ppimport_attr'):
         object = object._ppimport_attr
+
+    if output is None:
+        output = sys.stdout
 
     if object is None:
         info(info)
@@ -901,8 +972,12 @@ def _lookfor_generate_cache(module, import_modules, regenerate):
                             finally:
                                 sys.stdout = old_stdout
                                 sys.stderr = old_stderr
-                        # Catch SystemExit, too
-                        except (Exception, SystemExit):
+                        except KeyboardInterrupt:
+                            # Assume keyboard interrupt came from a user
+                            raise
+                        except BaseException:
+                            # Ignore also SystemExit and pytests.importorskip
+                            # `Skipped` (these are BaseExceptions; gh-22345)
                             continue
 
             for n, v in _getmembers(item):
@@ -960,6 +1035,12 @@ def safe_eval(source):
 
     Evaluate a string containing a Python literal expression without
     allowing the execution of arbitrary non-literal code.
+
+    .. warning::
+
+        This function is identical to :py:meth:`ast.literal_eval` and
+        has the same security implications.  It may not always be safe
+        to evaluate large input strings.
 
     Parameters
     ----------

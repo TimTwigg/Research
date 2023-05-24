@@ -1119,7 +1119,7 @@ def chebval(x, c, tensor=True):
         If `x` is a list or tuple, it is converted to an ndarray, otherwise
         it is left unchanged and treated as a scalar. In either case, `x`
         or its elements must support addition and multiplication with
-        with themselves and with the elements of `c`.
+        themselves and with the elements of `c`.
     c : array_like
         Array of coefficients ordered so that the coefficients for terms of
         degree n are contained in c[n]. If `c` is multidimensional the
@@ -1959,7 +1959,8 @@ def chebpts2(npts):
     Chebyshev points of the second kind.
 
     The Chebyshev points of the second kind are the points ``cos(x)``,
-    where ``x = [pi*k/(npts - 1) for k in range(npts)]``.
+    where ``x = [pi*k/(npts - 1) for k in range(npts)]`` sorted in ascending
+    order.
 
     Parameters
     ----------

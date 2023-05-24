@@ -826,7 +826,7 @@ def lagval(x, c, tensor=True):
         If `x` is a list or tuple, it is converted to an ndarray, otherwise
         it is left unchanged and treated as a scalar. In either case, `x`
         or its elements must support addition and multiplication with
-        with themselves and with the elements of `c`.
+        themselves and with the elements of `c`.
     c : array_like
         Array of coefficients ordered so that the coefficients for terms of
         degree n are contained in c[n]. If `c` is multidimensional the
@@ -1282,7 +1282,7 @@ def lagfit(x, y, deg, rcond=None, full=False, w=None):
 
     .. math::  p(x) = c_0 + c_1 * L_1(x) + ... + c_n * L_n(x),
 
-    where `n` is `deg`.
+    where ``n`` is `deg`.
 
     Parameters
     ----------
@@ -1317,8 +1317,8 @@ def lagfit(x, y, deg, rcond=None, full=False, w=None):
     -------
     coef : ndarray, shape (M,) or (M, K)
         Laguerre coefficients ordered from low to high. If `y` was 2-D,
-        the coefficients for the data in column k  of `y` are in column
-        `k`.
+        the coefficients for the data in column *k*  of `y` are in column
+        *k*.
 
     [residuals, rank, singular_values, rcond] : list
         These values are only returned if ``full == True``
@@ -1355,7 +1355,7 @@ def lagfit(x, y, deg, rcond=None, full=False, w=None):
 
     Notes
     -----
-    The solution is the coefficients of the Laguerre series `p` that
+    The solution is the coefficients of the Laguerre series ``p`` that
     minimizes the sum of the weighted squared errors
 
     .. math:: E = \\sum_j w_j^2 * |y_j - p(x_j)|^2,
@@ -1365,10 +1365,10 @@ def lagfit(x, y, deg, rcond=None, full=False, w=None):
 
     .. math:: V(x) * c = w * y,
 
-    where `V` is the weighted pseudo Vandermonde matrix of `x`, `c` are the
+    where ``V`` is the weighted pseudo Vandermonde matrix of `x`, ``c`` are the
     coefficients to be solved for, `w` are the weights, and `y` are the
     observed values.  This equation is then solved using the singular value
-    decomposition of `V`.
+    decomposition of ``V``.
 
     If some of the singular values of `V` are so small that they are
     neglected, then a `RankWarning` will be issued. This means that the
@@ -1378,7 +1378,7 @@ def lagfit(x, y, deg, rcond=None, full=False, w=None):
     spurious and have large contributions from roundoff error.
 
     Fits using Laguerre series are probably most useful when the data can
-    be approximated by ``sqrt(w(x)) * p(x)``, where `w(x)` is the Laguerre
+    be approximated by ``sqrt(w(x)) * p(x)``, where ``w(x)`` is the Laguerre
     weight. In that case the weight ``sqrt(w(x[i]))`` should be used
     together with data values ``y[i]/sqrt(w(x[i]))``. The weight function is
     available as `lagweight`.

@@ -5,15 +5,6 @@ import os
 import importlib
 import sys
 
-from .cv2 import *
-from .cv2 import _registerMatType
-from . import mat_wrapper
-from . import gapi
-from . import misc
-from . import utils
-from . import data
-from . import version
-
 __all__ = []
 
 try:
@@ -98,7 +89,7 @@ def bootstrap():
     BINARIES_PATHS = []
 
     g_vars = globals()
-    l_vars = locals()
+    l_vars = locals().copy()
 
     if sys.version_info[:2] < (3, 0):
         from . load_config_py2 import exec_file_wrapper
@@ -159,7 +150,7 @@ def bootstrap():
 
     py_module = sys.modules.pop("cv2")
 
-    native_module = importlib.import_module("cv2.cv2")
+    native_module = importlib.import_module("cv2")
 
     sys.modules["cv2"] = py_module
     setattr(py_module, "_native", native_module)

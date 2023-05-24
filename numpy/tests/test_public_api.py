@@ -9,6 +9,7 @@ import warnings
 import numpy as np
 import numpy
 import pytest
+from numpy.testing import IS_WASM
 
 try:
     import ctypes
@@ -43,7 +44,7 @@ def test_numpy_namespace():
         'deprecate': 'numpy.lib.utils.deprecate',
         'deprecate_with_doc': 'numpy.lib.utils.deprecate_with_doc',
         'disp': 'numpy.lib.function_base.disp',
-        'fastCopyAndTranspose': 'numpy.core._multiarray_umath._fastCopyAndTranspose',
+        'fastCopyAndTranspose': 'numpy.core._multiarray_umath.fastCopyAndTranspose',
         'get_array_wrap': 'numpy.lib.shape_base.get_array_wrap',
         'get_include': 'numpy.lib.utils.get_include',
         'recfromcsv': 'numpy.lib.npyio.recfromcsv',
@@ -51,6 +52,7 @@ def test_numpy_namespace():
         'safe_eval': 'numpy.lib.utils.safe_eval',
         'set_string_function': 'numpy.core.arrayprint.set_string_function',
         'show_config': 'numpy.__config__.show',
+        'show_runtime': 'numpy.lib.utils.show_runtime',
         'who': 'numpy.lib.utils.who',
     }
     # We override dir to not show these members
@@ -61,6 +63,7 @@ def test_numpy_namespace():
     assert bad_results == allowlist
 
 
+@pytest.mark.skipif(IS_WASM, reason="can't start subprocess")
 @pytest.mark.parametrize('name', ['testing', 'Tester'])
 def test_import_lazy_import(name):
     """Make sure we can actually use the modules we lazy load.
@@ -252,7 +255,6 @@ PRIVATE_BUT_PRESENT_MODULES = ['numpy.' + s for s in [
     "f2py.crackfortran",
     "f2py.diagnose",
     "f2py.f2py2e",
-    "f2py.f2py_testing",
     "f2py.f90mod_rules",
     "f2py.func2subr",
     "f2py.rules",
@@ -317,6 +319,7 @@ SKIP_LIST = [
     "numpy.core.code_generators.generate_numpy_api",
     "numpy.core.code_generators.generate_ufunc_api",
     "numpy.core.code_generators.numpy_api",
+    "numpy.core.code_generators.generate_umath_doc",
     "numpy.core.cversions",
     "numpy.core.generate_numpy_api",
     "numpy.distutils.msvc9compiler",
@@ -348,6 +351,8 @@ def test_all_modules_are_expected():
 SKIP_LIST_2 = [
     'numpy.math',
     'numpy.distutils.log.sys',
+    'numpy.distutils.log.logging',
+    'numpy.distutils.log.warnings',
     'numpy.doc.constants.re',
     'numpy.doc.constants.textwrap',
     'numpy.lib.emath',

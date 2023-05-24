@@ -168,7 +168,7 @@ def rot90(m, k=1, axes=(0, 1)):
         Array of two or more dimensions.
     k : integer
         Number of times the array is rotated by 90 degrees.
-    axes: (2,) array_like
+    axes : (2,) array_like
         The array is rotated in the plane defined by the axes.
         Axes must be different.
 
@@ -388,12 +388,14 @@ def iterable(y):
     return True
 
 
-def _average_dispatcher(a, axis=None, weights=None, returned=None):
+def _average_dispatcher(a, axis=None, weights=None, returned=None, *,
+                        keepdims=None):
     return (a, weights)
 
 
 @array_function_dispatch(_average_dispatcher)
-def average(a, axis=None, weights=None, returned=False):
+def average(a, axis=None, weights=None, returned=False, *,
+            keepdims=np._NoValue):
     """
     Compute the weighted average along the specified axis.
 
@@ -428,6 +430,14 @@ def average(a, axis=None, weights=None, returned=False):
         is returned, otherwise only the average is returned.
         If `weights=None`, `sum_of_weights` is equivalent to the number of
         elements over which the average is taken.
+    keepdims : bool, optional
+        If this is set to True, the axes which are reduced are left
+        in the result as dimensions with size one. With this option,
+        the result will broadcast correctly against the original `a`.
+        *Note:* `keepdims` will not work with instances of `numpy.matrix`
+        or other classes whose methods do not support `keepdims`.
+
+        .. versionadded:: 1.23.0
 
     Returns
     -------
@@ -471,7 +481,7 @@ def average(a, axis=None, weights=None, returned=False):
     >>> np.average(np.arange(1, 11), weights=np.arange(10, 0, -1))
     4.0
 
-    >>> data = np.arange(6).reshape((3,2))
+    >>> data = np.arange(6).reshape((3, 2))
     >>> data
     array([[0, 1],
            [2, 3],
@@ -488,12 +498,26 @@ def average(a, axis=None, weights=None, returned=False):
     >>> avg = np.average(a, weights=w)
     >>> print(avg.dtype)
     complex256
+
+    With ``keepdims=True``, the following result has shape (3, 1).
+
+    >>> np.average(data, axis=1, keepdims=True)
+    array([[0.5],
+           [2.5],
+           [4.5]])
     """
     a = np.asanyarray(a)
 
+    if keepdims is np._NoValue:
+        # Don't pass on the keepdims argument if one wasn't given.
+        keepdims_kw = {}
+    else:
+        keepdims_kw = {'keepdims': keepdims}
+
     if weights is None:
-        avg = a.mean(axis)
-        scl = avg.dtype.type(a.size/avg.size)
+        avg = a.mean(axis, **keepdims_kw)
+        avg_as_array = np.asanyarray(avg)
+        scl = avg_as_array.dtype.type(a.size/avg_as_array.size)
     else:
         wgt = np.asanyarray(weights)
 
@@ -519,16 +543,17 @@ def average(a, axis=None, weights=None, returned=False):
             wgt = np.broadcast_to(wgt, (a.ndim-1)*(1,) + wgt.shape)
             wgt = wgt.swapaxes(-1, axis)
 
-        scl = wgt.sum(axis=axis, dtype=result_dtype)
+        scl = wgt.sum(axis=axis, dtype=result_dtype, **keepdims_kw)
         if np.any(scl == 0.0):
             raise ZeroDivisionError(
                 "Weights sum to zero, can't be normalized")
 
-        avg = np.multiply(a, wgt, dtype=result_dtype).sum(axis)/scl
+        avg = avg_as_array = np.multiply(a, wgt,
+                          dtype=result_dtype).sum(axis, **keepdims_kw) / scl
 
     if returned:
-        if scl.shape != avg.shape:
-            scl = np.broadcast_to(scl, avg.shape).copy()
+        if scl.shape != avg_as_array.shape:
+            scl = np.broadcast_to(scl, avg_as_array.shape).copy()
         return avg, scl
     else:
         return avg
@@ -906,7 +931,7 @@ def copy(a, order='K', subok=False):
     >>> b[0] = 3
     >>> b
     array([3, 2, 3])
-    
+
     Note that np.copy is a shallow copy and will not copy object
     elements within arrays. This is mainly important for arrays
     containing Python objects. The new array will contain the
@@ -1656,7 +1681,7 @@ def unwrap(p, discont=None, axis=-1, *, period=2*pi):
         larger than ``period/2``.
     axis : int, optional
         Axis along which unwrap will operate, default is the last axis.
-    period: float, optional
+    period : float, optional
         Size of the range over which the input wraps. By default, it is
         ``2 pi``.
 
@@ -2696,7 +2721,7 @@ def corrcoef(x, y=None, rowvar=True, bias=np._NoValue, ddof=np._NoValue, *,
     relationship between the correlation coefficient matrix, `R`, and the
     covariance matrix, `C`, is
 
-    .. math:: R_{ij} = \\frac{ C_{ij} } { \\sqrt{ C_{ii} * C_{jj} } }
+    .. math:: R_{ij} = \\frac{ C_{ij} } { \\sqrt{ C_{ii} C_{jj} } }
 
     The values of `R` are between -1 and 1, inclusive.
 
@@ -2974,15 +2999,14 @@ def bartlett(M):
               \\frac{M-1}{2} - \\left|n - \\frac{M-1}{2}\\right|
               \\right)
 
-    Most references to the Bartlett window come from the signal
-    processing literature, where it is used as one of many windowing
-    functions for smoothing values.  Note that convolution with this
-    window produces linear interpolation.  It is also known as an
-    apodization (which means"removing the foot", i.e. smoothing
-    discontinuities at the beginning and end of the sampled signal) or
-    tapering function. The fourier transform of the Bartlett is the product
-    of two sinc functions.
-    Note the excellent discussion in Kanasewich.
+    Most references to the Bartlett window come from the signal processing
+    literature, where it is used as one of many windowing functions for
+    smoothing values.  Note that convolution with this window produces linear
+    interpolation.  It is also known as an apodization (which means "removing
+    the foot", i.e. smoothing discontinuities at the beginning and end of the
+    sampled signal) or tapering function. The Fourier transform of the
+    Bartlett window is the product of two sinc functions. Note the excellent
+    discussion in Kanasewich [2]_.
 
     References
     ----------
@@ -3075,7 +3099,7 @@ def hanning(M):
     -----
     The Hanning window is defined as
 
-    .. math::  w(n) = 0.5 - 0.5cos\\left(\\frac{2\\pi{n}}{M-1}\\right)
+    .. math::  w(n) = 0.5 - 0.5\\cos\\left(\\frac{2\\pi{n}}{M-1}\\right)
                \\qquad 0 \\leq n \\leq M-1
 
     The Hanning was named for Julius von Hann, an Austrian meteorologist.
@@ -3179,7 +3203,7 @@ def hamming(M):
     -----
     The Hamming window is defined as
 
-    .. math::  w(n) = 0.54 - 0.46cos\\left(\\frac{2\\pi{n}}{M-1}\\right)
+    .. math::  w(n) = 0.54 - 0.46\\cos\\left(\\frac{2\\pi{n}}{M-1}\\right)
                \\qquad 0 \\leq n \\leq M-1
 
     The Hamming was named for R. W. Hamming, an associate of J. W. Tukey
@@ -3539,20 +3563,22 @@ def sinc(x):
     r"""
     Return the normalized sinc function.
 
-    The sinc function is :math:`\sin(\pi x)/(\pi x)`.
+    The sinc function is equal to :math:`\sin(\pi x)/(\pi x)` for any argument
+    :math:`x\ne 0`. ``sinc(0)`` takes the limit value 1, making ``sinc`` not
+    only everywhere continuous but also infinitely differentiable.
 
     .. note::
 
         Note the normalization factor of ``pi`` used in the definition.
         This is the most commonly used definition in signal processing.
         Use ``sinc(x / np.pi)`` to obtain the unnormalized sinc function
-        :math:`\sin(x)/(x)` that is more common in mathematics.
+        :math:`\sin(x)/x` that is more common in mathematics.
 
     Parameters
     ----------
     x : ndarray
-        Array (possibly multi-dimensional) of values for which to to
-        calculate ``sinc(x)``.
+        Array (possibly multi-dimensional) of values for which to calculate
+        ``sinc(x)``.
 
     Returns
     -------
@@ -3561,8 +3587,6 @@ def sinc(x):
 
     Notes
     -----
-    ``sinc(0)`` is the limit value 1.
-
     The name sinc is short for "sine cardinal" or "sinus cardinalis".
 
     The sinc function is used in various signal processing applications,
@@ -3624,6 +3648,10 @@ def msort(a):
     """
     Return a copy of an array sorted along the first axis.
 
+    .. deprecated:: 1.24
+
+       msort is deprecated, use ``np.sort(a, axis=0)`` instead.
+
     Parameters
     ----------
     a : array_like
@@ -3642,13 +3670,26 @@ def msort(a):
     -----
     ``np.msort(a)`` is equivalent to  ``np.sort(a, axis=0)``.
 
+    Examples
+    --------
+    >>> a = np.array([[1, 4], [3, 1]])
+    >>> np.msort(a)  # sort along the first axis
+    array([[1, 1],
+           [3, 4]])
+
     """
+    # 2022-10-20 1.24
+    warnings.warn(
+        "msort is deprecated, use np.sort(a, axis=0) instead",
+        DeprecationWarning,
+        stacklevel=3,
+    )
     b = array(a, subok=True, copy=True)
     b.sort(0)
     return b
 
 
-def _ureduce(a, func, **kwargs):
+def _ureduce(a, func, keepdims=False, **kwargs):
     """
     Internal Function.
     Call `func` with `a` as first argument swapping the axes to use extended
@@ -3676,13 +3717,20 @@ def _ureduce(a, func, **kwargs):
     """
     a = np.asanyarray(a)
     axis = kwargs.get('axis', None)
+    out = kwargs.get('out', None)
+
+    if keepdims is np._NoValue:
+        keepdims = False
+
+    nd = a.ndim
     if axis is not None:
-        keepdim = list(a.shape)
-        nd = a.ndim
         axis = _nx.normalize_axis_tuple(axis, nd)
 
-        for ax in axis:
-            keepdim[ax] = 1
+        if keepdims:
+            if out is not None:
+                index_out = tuple(
+                    0 if i in axis else slice(None) for i in range(nd))
+                kwargs['out'] = out[(Ellipsis, ) + index_out]
 
         if len(axis) == 1:
             kwargs['axis'] = axis[0]
@@ -3695,12 +3743,27 @@ def _ureduce(a, func, **kwargs):
             # merge reduced axis
             a = a.reshape(a.shape[:nkeep] + (-1,))
             kwargs['axis'] = -1
-        keepdim = tuple(keepdim)
     else:
-        keepdim = (1,) * a.ndim
+        if keepdims:
+            if out is not None:
+                index_out = (0, ) * nd
+                kwargs['out'] = out[(Ellipsis, ) + index_out]
 
     r = func(a, **kwargs)
-    return r, keepdim
+
+    if out is not None:
+        return out
+
+    if keepdims:
+        if axis is None:
+            index_r = (np.newaxis, ) * nd
+        else:
+            index_r = tuple(
+                np.newaxis if i in axis else slice(None)
+                for i in range(nd))
+        r = r[(Ellipsis, ) + index_r]
+
+    return r
 
 
 def _median_dispatcher(
@@ -3790,12 +3853,8 @@ def median(a, axis=None, out=None, overwrite_input=False, keepdims=False):
     >>> assert not np.all(a==b)
 
     """
-    r, k = _ureduce(a, func=_median, axis=axis, out=out,
+    return _ureduce(a, func=_median, keepdims=keepdims, axis=axis, out=out,
                     overwrite_input=overwrite_input)
-    if keepdims:
-        return r.reshape(k)
-    else:
-        return r
 
 
 def _median(a, axis=None, out=None, overwrite_input=False):
@@ -3911,7 +3970,7 @@ def percentile(a,
         8. 'median_unbiased'
         9. 'normal_unbiased'
 
-        The first three methods are discontiuous.  NumPy further defines the
+        The first three methods are discontinuous.  NumPy further defines the
         following discontinuous variations of the default 'linear' (7.) option:
 
         * 'lower'
@@ -3956,7 +4015,7 @@ def percentile(a,
 
     Notes
     -----
-    Given a vector ``V`` of length ``N``, the q-th percentile of ``V`` is
+    Given a vector ``V`` of length ``n``, the q-th percentile of ``V`` is
     the value ``q/100`` of the way from the minimum to the maximum in a
     sorted copy of ``V``. The values and distances of the two nearest
     neighbors as well as the `method` parameter will determine the
@@ -3965,37 +4024,43 @@ def percentile(a,
     same as the minimum if ``q=0`` and the same as the maximum if
     ``q=100``.
 
-    This optional `method` parameter specifies the method to use when the
-    desired quantile lies between two data points ``i < j``.
-    If ``g`` is the fractional part of the index surrounded by ``i`` and
-    alpha and beta are correction constants modifying i and j.
+    The optional `method` parameter specifies the method to use when the
+    desired percentile lies between two indexes ``i`` and ``j = i + 1``.
+    In that case, we first determine ``i + g``, a virtual index that lies
+    between ``i`` and ``j``, where  ``i`` is the floor and ``g`` is the
+    fractional part of the index. The final result is, then, an interpolation
+    of ``a[i]`` and ``a[j]`` based on ``g``. During the computation of ``g``,
+    ``i`` and ``j`` are modified using correction constants ``alpha`` and
+    ``beta`` whose choices depend on the ``method`` used. Finally, note that
+    since Python uses 0-based indexing, the code subtracts another 1 from the
+    index internally.
 
-    Below, 'q' is the quantile value, 'n' is the sample size and
-    alpha and beta are constants.
-    The following formula gives an interpolation "i + g" of where the quantile
-    would be in the sorted sample.
-    With 'i' being the floor and 'g' the fractional part of the result.
+    The following formula determines the virtual index ``i + g``, the location 
+    of the percentile in the sorted sample:
 
     .. math::
-        i + g = (q - alpha) / ( n - alpha - beta + 1 )
+        i + g = (q / 100) * ( n - alpha - beta + 1 ) + alpha
 
     The different methods then work as follows
 
     inverted_cdf:
         method 1 of H&F [1]_.
         This method gives discontinuous results:
+
         * if g > 0 ; then take j
         * if g = 0 ; then take i
 
     averaged_inverted_cdf:
         method 2 of H&F [1]_.
         This method give discontinuous results:
+
         * if g > 0 ; then take j
         * if g = 0 ; then average between bounds
 
     closest_observation:
         method 3 of H&F [1]_.
         This method give discontinuous results:
+
         * if g > 0 ; then take j
         * if g = 0 and index is odd ; then take j
         * if g = 0 and index is even ; then take i
@@ -4003,24 +4068,28 @@ def percentile(a,
     interpolated_inverted_cdf:
         method 4 of H&F [1]_.
         This method give continuous results using:
+
         * alpha = 0
         * beta = 1
 
     hazen:
         method 5 of H&F [1]_.
         This method give continuous results using:
+
         * alpha = 1/2
         * beta = 1/2
 
     weibull:
         method 6 of H&F [1]_.
         This method give continuous results using:
+
         * alpha = 0
         * beta = 0
 
     linear:
         method 7 of H&F [1]_.
         This method give continuous results using:
+
         * alpha = 1
         * beta = 1
 
@@ -4029,6 +4098,7 @@ def percentile(a,
         This method is probably the best method if the sample
         distribution function is unknown (see reference).
         This method give continuous results using:
+
         * alpha = 1/3
         * beta = 1/3
 
@@ -4037,6 +4107,7 @@ def percentile(a,
         This method is probably the best method if the sample
         distribution function is known to be normal.
         This method give continuous results using:
+
         * alpha = 3/8
         * beta = 3/8
 
@@ -4190,7 +4261,7 @@ def quantile(a,
         8. 'median_unbiased'
         9. 'normal_unbiased'
 
-        The first three methods are discontiuous.  NumPy further defines the
+        The first three methods are discontinuous.  NumPy further defines the
         following discontinuous variations of the default 'linear' (7.) option:
 
         * 'lower'
@@ -4233,64 +4304,81 @@ def quantile(a,
 
     Notes
     -----
-    Given a vector ``V`` of length ``N``, the q-th quantile of ``V`` is the
-    value ``q`` of the way from the minimum to the maximum in a sorted copy of
-    ``V``. The values and distances of the two nearest neighbors as well as the
-    `method` parameter will determine the quantile if the normalized
-    ranking does not match the location of ``q`` exactly. This function is the
-    same as the median if ``q=0.5``, the same as the minimum if ``q=0.0`` and
-    the same as the maximum if ``q=1.0``.
+    Given a vector ``V`` of length ``n``, the q-th quantile of ``V`` is
+    the value ``q`` of the way from the minimum to the maximum in a
+    sorted copy of ``V``. The values and distances of the two nearest
+    neighbors as well as the `method` parameter will determine the
+    quantile if the normalized ranking does not match the location of
+    ``q`` exactly. This function is the same as the median if ``q=0.5``, the
+    same as the minimum if ``q=0.0`` and the same as the maximum if
+    ``q=1.0``.
 
-    This optional `method` parameter specifies the method to use when the
-    desired quantile lies between two data points ``i < j``.
-    If ``g`` is the fractional part of the index surrounded by ``i`` and
-    alpha and beta are correction constants modifying i and j.
+    The optional `method` parameter specifies the method to use when the
+    desired quantile lies between two indexes ``i`` and ``j = i + 1``.
+    In that case, we first determine ``i + g``, a virtual index that lies
+    between ``i`` and ``j``, where  ``i`` is the floor and ``g`` is the
+    fractional part of the index. The final result is, then, an interpolation
+    of ``a[i]`` and ``a[j]`` based on ``g``. During the computation of ``g``,
+    ``i`` and ``j`` are modified using correction constants ``alpha`` and
+    ``beta`` whose choices depend on the ``method`` used. Finally, note that
+    since Python uses 0-based indexing, the code subtracts another 1 from the
+    index internally.
+
+    The following formula determines the virtual index ``i + g``, the location 
+    of the quantile in the sorted sample:
 
     .. math::
-        i + g = (q - alpha) / ( n - alpha - beta + 1 )
+        i + g = q * ( n - alpha - beta + 1 ) + alpha
 
     The different methods then work as follows
 
     inverted_cdf:
         method 1 of H&F [1]_.
         This method gives discontinuous results:
+
         * if g > 0 ; then take j
         * if g = 0 ; then take i
 
     averaged_inverted_cdf:
         method 2 of H&F [1]_.
-        This method give discontinuous results:
+        This method gives discontinuous results:
+
         * if g > 0 ; then take j
         * if g = 0 ; then average between bounds
 
     closest_observation:
         method 3 of H&F [1]_.
-        This method give discontinuous results:
+        This method gives discontinuous results:
+
         * if g > 0 ; then take j
         * if g = 0 and index is odd ; then take j
         * if g = 0 and index is even ; then take i
 
     interpolated_inverted_cdf:
         method 4 of H&F [1]_.
-        This method give continuous results using:
+        This method gives continuous results using:
+
         * alpha = 0
         * beta = 1
 
     hazen:
         method 5 of H&F [1]_.
-        This method give continuous results using:
+        This method gives continuous results using:
+
         * alpha = 1/2
         * beta = 1/2
 
     weibull:
         method 6 of H&F [1]_.
-        This method give continuous results using:
+        This method gives continuous results using:
+
         * alpha = 0
         * beta = 0
 
     linear:
         method 7 of H&F [1]_.
-        This method give continuous results using:
+        This method gives continuous results using:
+
         * alpha = 1
         * beta = 1
 
@@ -4298,7 +4386,8 @@ def quantile(a,
         method 8 of H&F [1]_.
         This method is probably the best method if the sample
         distribution function is unknown (see reference).
-        This method give continuous results using:
+        This method gives continuous results using:
+
         * alpha = 1/3
         * beta = 1/3
 
@@ -4306,7 +4395,8 @@ def quantile(a,
         method 9 of H&F [1]_.
         This method is probably the best method if the sample
         distribution function is known to be normal.
-        This method give continuous results using:
+        This method gives continuous results using:
+
         * alpha = 3/8
         * beta = 3/8
 
@@ -4380,17 +4470,14 @@ def _quantile_unchecked(a,
                         method="linear",
                         keepdims=False):
     """Assumes that q is in [0, 1], and is an ndarray"""
-    r, k = _ureduce(a,
+    return _ureduce(a,
                     func=_quantile_ureduce_func,
                     q=q,
+                    keepdims=keepdims,
                     axis=axis,
                     out=out,
                     overwrite_input=overwrite_input,
                     method=method)
-    if keepdims:
-        return r.reshape(q.shape + k)
-    else:
-        return r
 
 
 def _quantile_is_valid(q):
@@ -4411,7 +4498,7 @@ def _check_interpolation_as_method(method, interpolation, fname):
         f"the `interpolation=` argument to {fname} was renamed to "
         "`method=`, which has additional options.\n"
         "Users of the modes 'nearest', 'lower', 'higher', or "
-        "'midpoint' are encouraged to review the method they. "
+        "'midpoint' are encouraged to review the method they used. "
         "(Deprecated NumPy 1.22)",
         DeprecationWarning, stacklevel=4)
     if method != "linear":
@@ -4713,10 +4800,10 @@ def trapz(y, x=None, dx=1.0, axis=-1):
     Returns
     -------
     trapz : float or ndarray
-        Definite integral of 'y' = n-dimensional array as approximated along
-        a single axis by the trapezoidal rule. If 'y' is a 1-dimensional array,
-        then the result is a float. If 'n' is greater than 1, then the result
-        is an 'n-1' dimensional array.
+        Definite integral of `y` = n-dimensional array as approximated along
+        a single axis by the trapezoidal rule. If `y` is a 1-dimensional array,
+        then the result is a float. If `n` is greater than 1, then the result
+        is an `n`-1 dimensional array.
 
     See Also
     --------
@@ -4847,9 +4934,9 @@ def meshgrid(*xi, copy=True, sparse=False, indexing='xy'):
     Returns
     -------
     X1, X2,..., XN : ndarray
-        For vectors `x1`, `x2`,..., 'xn' with lengths ``Ni=len(xi)`` ,
-        return ``(N1, N2, N3,...Nn)`` shaped arrays if indexing='ij'
-        or ``(N2, N1, N3,...Nn)`` shaped arrays if indexing='xy'
+        For vectors `x1`, `x2`,..., `xn` with lengths ``Ni=len(xi)``,
+        returns ``(N1, N2, N3,..., Nn)`` shaped arrays if indexing='ij'
+        or ``(N2, N1, N3,..., Nn)`` shaped arrays if indexing='xy'
         with the elements of `xi` repeated to fill the matrix along
         the first dimension for `x1`, the second for `x2` and so on.
 
@@ -4881,6 +4968,7 @@ def meshgrid(*xi, copy=True, sparse=False, indexing='xy'):
     mgrid : Construct a multi-dimensional "meshgrid" using indexing notation.
     ogrid : Construct an open multi-dimensional "meshgrid" using indexing
             notation.
+    how-to-index
 
     Examples
     --------
@@ -4894,20 +4982,29 @@ def meshgrid(*xi, copy=True, sparse=False, indexing='xy'):
     >>> yv
     array([[0.,  0.,  0.],
            [1.,  1.,  1.]])
-    >>> xv, yv = np.meshgrid(x, y, sparse=True)  # make sparse output arrays
+
+    The result of `meshgrid` is a coordinate grid:
+
+    >>> import matplotlib.pyplot as plt
+    >>> plt.plot(xv, yv, marker='o', color='k', linestyle='none')
+    >>> plt.show()
+
+    You can create sparse output arrays to save memory and computation time.
+
+    >>> xv, yv = np.meshgrid(x, y, sparse=True)
     >>> xv
     array([[0. ,  0.5,  1. ]])
     >>> yv
     array([[0.],
            [1.]])
 
-    `meshgrid` is very useful to evaluate functions on a grid.  If the
-    function depends on all coordinates, you can use the parameter
-    ``sparse=True`` to save memory and computation time.
+    `meshgrid` is very useful to evaluate functions on a grid. If the
+    function depends on all coordinates, both dense and sparse outputs can be
+    used.
 
     >>> x = np.linspace(-5, 5, 101)
     >>> y = np.linspace(-5, 5, 101)
-    >>> # full coorindate arrays
+    >>> # full coordinate arrays
     >>> xx, yy = np.meshgrid(x, y)
     >>> zz = np.sqrt(xx**2 + yy**2)
     >>> xx.shape, yy.shape, zz.shape
@@ -4920,7 +5017,6 @@ def meshgrid(*xi, copy=True, sparse=False, indexing='xy'):
     >>> np.array_equal(zz, zs)
     True
 
-    >>> import matplotlib.pyplot as plt
     >>> h = plt.contourf(x, y, zs)
     >>> plt.axis('scaled')
     >>> plt.colorbar()
@@ -4998,7 +5094,7 @@ def delete(arr, obj, axis=None):
     >>> mask[[0,2,4]] = False
     >>> result = arr[mask,...]
 
-    Is equivalent to `np.delete(arr, [0,2,4], axis=0)`, but allows further
+    Is equivalent to ``np.delete(arr, [0,2,4], axis=0)``, but allows further
     use of `mask`.
 
     Examples
@@ -5094,6 +5190,22 @@ def delete(arr, obj, axis=None):
             return new
 
     if isinstance(obj, (int, integer)) and not isinstance(obj, bool):
+        single_value = True
+    else:
+        single_value = False
+        _obj = obj
+        obj = np.asarray(obj)
+        # `size == 0` to allow empty lists similar to indexing, but (as there)
+        # is really too generic:
+        if obj.size == 0 and not isinstance(_obj, np.ndarray):
+            obj = obj.astype(intp)
+        elif obj.size == 1 and obj.dtype.kind in "ui":
+            # For a size 1 integer array we can use the single-value path
+            # (most dtypes, except boolean, should just fail later).
+            obj = obj.item()
+            single_value = True
+
+    if single_value:
         # optimization for a single value
         if (obj < -N or obj >= N):
             raise IndexError(
@@ -5110,11 +5222,6 @@ def delete(arr, obj, axis=None):
         slobj2[axis] = slice(obj+1, None)
         new[tuple(slobj)] = arr[tuple(slobj2)]
     else:
-        _obj = obj
-        obj = np.asarray(obj)
-        if obj.size == 0 and not isinstance(_obj, np.ndarray):
-            obj = obj.astype(intp)
-
         if obj.dtype == bool:
             if obj.shape != (N,):
                 raise ValueError('boolean array argument obj to delete '
@@ -5182,9 +5289,9 @@ def insert(arr, obj, values, axis=None):
 
     Notes
     -----
-    Note that for higher dimensional inserts `obj=0` behaves very different
-    from `obj=[0]` just like `arr[:,0,:] = values` is different from
-    `arr[:,[0],:] = values`.
+    Note that for higher dimensional inserts ``obj=0`` behaves very different
+    from ``obj=[0]`` just like ``arr[:,0,:] = values`` is different from
+    ``arr[:,[0],:] = values``.
 
     Examples
     --------

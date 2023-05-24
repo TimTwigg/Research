@@ -1,12 +1,12 @@
 # updated 3 November 2022
 
-from App2 import App
+from PuzzleGenerator import PuzzleGenerator
 
 import usb.core
 import usb.util
 
 def listen(dev, endpoint_in, endpoint_out):
-    app = App()
+    app = PuzzleGenerator()
     
     while(True):
         try:

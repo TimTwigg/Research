@@ -12,7 +12,7 @@ from numpy.random import rand, randint, randn
 from numpy.testing import (
     assert_, assert_equal, assert_raises, assert_raises_regex,
     assert_array_equal, assert_almost_equal, assert_array_almost_equal,
-    assert_warns, assert_array_max_ulp, HAS_REFCOUNT
+    assert_warns, assert_array_max_ulp, HAS_REFCOUNT, IS_WASM
     )
 from numpy.core._rational_tests import rational
 
@@ -347,7 +347,7 @@ class TestBoolScalar:
 
 
 class TestBoolArray:
-    def setup(self):
+    def setup_method(self):
         # offset for simd tests
         self.t = np.array([True] * 41, dtype=bool)[1::]
         self.f = np.array([False] * 41, dtype=bool)[1::]
@@ -434,7 +434,7 @@ class TestBoolArray:
 
 
 class TestBoolCmp:
-    def setup(self):
+    def setup_method(self):
         self.f = np.ones(256, dtype=np.float32)
         self.ef = np.ones(self.f.size, dtype=bool)
         self.d = np.ones(128, dtype=np.float64)
@@ -556,6 +556,7 @@ class TestSeterr:
             np.seterr(**old)
             assert_(np.geterr() == old)
 
+    @pytest.mark.skipif(IS_WASM, reason="no wasm fp exception support")
     @pytest.mark.skipif(platform.machine() == "armv5tel", reason="See gh-413.")
     def test_divide_err(self):
         with np.errstate(divide='raise'):
@@ -565,6 +566,7 @@ class TestSeterr:
             np.seterr(divide='ignore')
             np.array([1.]) / np.array([0.])
 
+    @pytest.mark.skipif(IS_WASM, reason="no wasm fp exception support")
     def test_errobj(self):
         olderrobj = np.geterrobj()
         self.called = 0
@@ -638,6 +640,7 @@ class TestFloatExceptions:
         self.assert_raises_fpe(fpeerr, flop, sc1[()], sc2[()])
 
     # Test for all real and complex float types
+    @pytest.mark.skipif(IS_WASM, reason="no wasm fp exception support")
     @pytest.mark.parametrize("typecode", np.typecodes["AllFloat"])
     def test_floating_exceptions(self, typecode):
         # Test basic arithmetic function errors
@@ -697,6 +700,7 @@ class TestFloatExceptions:
             self.assert_raises_fpe(invalid,
                                    lambda a, b: a*b, ftype(0), ftype(np.inf))
 
+    @pytest.mark.skipif(IS_WASM, reason="no wasm fp exception support")
     def test_warnings(self):
         # test warning code path
         with warnings.catch_warnings(record=True) as w:
@@ -932,9 +936,28 @@ class TestTypes:
         # Promote with object:
         assert_equal(promote_types('O', S+'30'), np.dtype('O'))
 
+    @pytest.mark.parametrize(["dtype1", "dtype2"],
+            [[np.dtype("V6"), np.dtype("V10")],  # mismatch shape
+             # Mismatching names:
+             [np.dtype([("name1", "i8")]), np.dtype([("name2", "i8")])],
+            ])
+    def test_invalid_void_promotion(self, dtype1, dtype2):
+        with pytest.raises(TypeError):
+            np.promote_types(dtype1, dtype2)
+
+    @pytest.mark.parametrize(["dtype1", "dtype2"],
+            [[np.dtype("V10"), np.dtype("V10")],
+             [np.dtype([("name1", "i8")]),
+              np.dtype([("name1", np.dtype("i8").newbyteorder())])],
+             [np.dtype("i8,i8"), np.dtype("i8,>i8")],
+             [np.dtype("i8,i8"), np.dtype("i4,i4")],
+            ])
+    def test_valid_void_promotion(self, dtype1, dtype2):
+        assert np.promote_types(dtype1, dtype2) == dtype1
+
     @pytest.mark.parametrize("dtype",
-           list(np.typecodes["All"]) +
-           ["i,i", "S3", "S100", "U3", "U100", rational])
+            list(np.typecodes["All"]) +
+            ["i,i", "10i", "S3", "S100", "U3", "U100", rational])
     def test_promote_identical_types_metadata(self, dtype):
         # The same type passed in twice to promote types always
         # preserves metadata
@@ -951,14 +974,14 @@ class TestTypes:
             return
 
         res = np.promote_types(dtype, dtype)
-        if res.char in "?bhilqpBHILQPefdgFDGOmM" or dtype.type is rational:
-            # Metadata is lost for simple promotions (they create a new dtype)
+
+        # Metadata is (currently) generally lost on byte-swapping (except for
+        # unicode.
+        if dtype.char != "U":
             assert res.metadata is None
         else:
             assert res.metadata == metadata
-        if dtype.kind != "V":
-            # the result is native (except for structured void)
-            assert res.isnative
+        assert res.isnative
 
     @pytest.mark.slow
     @pytest.mark.filterwarnings('ignore:Promotion of numbers:FutureWarning')
@@ -987,8 +1010,10 @@ class TestTypes:
             # Promotion failed, this test only checks metadata
             return
 
-        if res.char in "?bhilqpBHILQPefdgFDGOmM" or res.type is rational:
-            # All simple types lose metadata (due to using promotion table):
+        if res.char not in "USV" or res.names is not None or res.shape != ():
+            # All except string dtypes (and unstructured void) lose metadata
+            # on promotion (unless both dtypes are identical).
+            # At some point structured ones did not, but were restrictive.
             assert res.metadata is None
         elif res == dtype1:
             # If one result is the result, it is usually returned unchanged:
@@ -1008,31 +1033,8 @@ class TestTypes:
         dtype1 = dtype1.newbyteorder()
         assert dtype1.metadata == metadata1
         res_bs = np.promote_types(dtype1, dtype2)
-        if res_bs.names is not None:
-            # Structured promotion doesn't remove byteswap:
-            assert res_bs.newbyteorder() == res
-        else:
-            assert res_bs == res
+        assert res_bs == res
         assert res_bs.metadata == res.metadata
-
-    @pytest.mark.parametrize(["dtype1", "dtype2"],
-            [[np.dtype("V6"), np.dtype("V10")],
-             [np.dtype([("name1", "i8")]), np.dtype([("name2", "i8")])],
-             [np.dtype("i8,i8"), np.dtype("i4,i4")],
-            ])
-    def test_invalid_void_promotion(self, dtype1, dtype2):
-        # Mainly test structured void promotion, which currently allows
-        # byte-swapping, but nothing else:
-        with pytest.raises(TypeError):
-            np.promote_types(dtype1, dtype2)
-
-    @pytest.mark.parametrize(["dtype1", "dtype2"],
-            [[np.dtype("V10"), np.dtype("V10")],
-             [np.dtype([("name1", "<i8")]), np.dtype([("name1", ">i8")])],
-             [np.dtype("i8,i8"), np.dtype("i8,>i8")],
-            ])
-    def test_valid_void_promotion(self, dtype1, dtype2):
-        assert np.promote_types(dtype1, dtype2) is dtype1
 
     def test_can_cast(self):
         assert_(np.can_cast(np.int32, np.int64))
@@ -1202,19 +1204,76 @@ class TestFromiter:
                 raise NIterError('error at index %s' % eindex)
             yield e
 
-    def test_2592(self):
-        # Test iteration exceptions are correctly raised.
-        count, eindex = 10, 5
-        assert_raises(NIterError, np.fromiter,
-                          self.load_data(count, eindex), dtype=int, count=count)
+    @pytest.mark.parametrize("dtype", [int, object])
+    @pytest.mark.parametrize(["count", "error_index"], [(10, 5), (10, 9)])
+    def test_2592(self, count, error_index, dtype):
+        # Test iteration exceptions are correctly raised. The data/generator
+        # has `count` elements but errors at `error_index`
+        iterable = self.load_data(count, error_index)
+        with pytest.raises(NIterError):
+            np.fromiter(iterable, dtype=dtype, count=count)
 
-    def test_2592_edge(self):
-        # Test iter. exceptions, edge case (exception at end of iterator).
-        count = 10
-        eindex = count-1
-        assert_raises(NIterError, np.fromiter,
-                          self.load_data(count, eindex), dtype=int, count=count)
+    @pytest.mark.parametrize("dtype", ["S", "S0", "V0", "U0"])
+    def test_empty_not_structured(self, dtype):
+        # Note, "S0" could be allowed at some point, so long "S" (without
+        # any length) is rejected.
+        with pytest.raises(ValueError, match="Must specify length"):
+            np.fromiter([], dtype=dtype)
 
+    @pytest.mark.parametrize(["dtype", "data"],
+            [("d", [1, 2, 3, 4, 5, 6, 7, 8, 9]),
+             ("O", [1, 2, 3, 4, 5, 6, 7, 8, 9]),
+             ("i,O", [(1, 2), (5, 4), (2, 3), (9, 8), (6, 7)]),
+             # subarray dtypes (important because their dimensions end up
+             # in the result arrays dimension:
+             ("2i", [(1, 2), (5, 4), (2, 3), (9, 8), (6, 7)]),
+             (np.dtype(("O", (2, 3))),
+              [((1, 2, 3), (3, 4, 5)), ((3, 2, 1), (5, 4, 3))])])
+    @pytest.mark.parametrize("length_hint", [0, 1])
+    def test_growth_and_complicated_dtypes(self, dtype, data, length_hint):
+        dtype = np.dtype(dtype)
+
+        data = data * 100  # make sure we realloc a bit
+
+        class MyIter:
+            # Class/example from gh-15789
+            def __length_hint__(self):
+                # only required to be an estimate, this is legal
+                return length_hint  # 0 or 1
+
+            def __iter__(self):
+                return iter(data)
+
+        res = np.fromiter(MyIter(), dtype=dtype)
+        expected = np.array(data, dtype=dtype)
+
+        assert_array_equal(res, expected)
+
+    def test_empty_result(self):
+        class MyIter:
+            def __length_hint__(self):
+                return 10
+
+            def __iter__(self):
+                return iter([])  # actual iterator is empty.
+
+        res = np.fromiter(MyIter(), dtype="d")
+        assert res.shape == (0,)
+        assert res.dtype == "d"
+
+    def test_too_few_items(self):
+        msg = "iterator too short: Expected 10 but iterator had only 3 items."
+        with pytest.raises(ValueError, match=msg):
+            np.fromiter([1, 2, 3], count=10, dtype=int)
+
+    def test_failed_itemsetting(self):
+        with pytest.raises(TypeError):
+            np.fromiter([1, None, 3], dtype=int)
+
+        # The following manages to hit somewhat trickier code paths:
+        iterable = ((2, 3, 4) for i in range(5))
+        with pytest.raises(ValueError):
+            np.fromiter(iterable, dtype=np.dtype((int, 2)))
 
 class TestNonzero:
     def test_nonzero_trivial(self):
@@ -1529,6 +1588,7 @@ class TestNonzero:
         a = np.array([[ThrowsAfter(15)]]*10)
         assert_raises(ValueError, np.nonzero, a)
 
+    @pytest.mark.skipif(IS_WASM, reason="wasm doesn't have threads")
     def test_structured_threadsafety(self):
         # Nonzero (and some other functions) should be threadsafe for
         # structured datatypes, see gh-15387. This test can behave randomly.
@@ -1758,7 +1818,7 @@ def assert_array_strict_equal(x, y):
 
 
 class TestClip:
-    def setup(self):
+    def setup_method(self):
         self.nr = 5
         self.nc = 3
 
@@ -2387,10 +2447,10 @@ class TestAllclose:
     rtol = 1e-5
     atol = 1e-8
 
-    def setup(self):
+    def setup_method(self):
         self.olderr = np.seterr(invalid='ignore')
 
-    def teardown(self):
+    def teardown_method(self):
         np.seterr(**self.olderr)
 
     def tst_allclose(self, x, y):
@@ -2472,7 +2532,7 @@ class TestIsclose:
     rtol = 1e-5
     atol = 1e-8
 
-    def setup(self):
+    def _setup(self):
         atol = self.atol
         rtol = self.rtol
         arr = np.array([100, 1000])
@@ -2518,7 +2578,7 @@ class TestIsclose:
                 ]
 
     def test_ip_isclose(self):
-        self.setup()
+        self._setup()
         tests = self.some_close_tests
         results = self.some_close_results
         for (x, y), result in zip(tests, results):
@@ -2540,17 +2600,17 @@ class TestIsclose:
             assert_array_equal(np.isclose(x, y).all(), np.allclose(x, y), msg % (x, y))
 
     def test_ip_all_isclose(self):
-        self.setup()
+        self._setup()
         for (x, y) in self.all_close_tests:
             self.tst_all_isclose(x, y)
 
     def test_ip_none_isclose(self):
-        self.setup()
+        self._setup()
         for (x, y) in self.none_close_tests:
             self.tst_none_isclose(x, y)
 
     def test_ip_isclose_allclose(self):
-        self.setup()
+        self._setup()
         tests = (self.all_close_tests + self.none_close_tests +
                  self.some_close_tests)
         for (x, y) in tests:
@@ -2616,7 +2676,7 @@ class TestIsclose:
 
 
 class TestStdVar:
-    def setup(self):
+    def setup_method(self):
         self.A = np.array([1, -1, 1, -1])
         self.real_var = 1
 
@@ -2669,7 +2729,7 @@ class TestStdVarComplex:
 class TestCreationFuncs:
     # Test ones, zeros, empty and full.
 
-    def setup(self):
+    def setup_method(self):
         dtypes = {np.dtype(tp) for tp in itertools.chain(*np.sctypes.values())}
         # void, bytes, str
         variable_sized = {tp for tp in dtypes if tp.str.endswith('0')}
@@ -2740,7 +2800,7 @@ class TestCreationFuncs:
 class TestLikeFuncs:
     '''Test ones_like, zeros_like, empty_like and full_like'''
 
-    def setup(self):
+    def setup_method(self):
         self.data = [
                 # Array scalars
                 (np.array(3.), None),
@@ -2769,12 +2829,11 @@ class TestLikeFuncs:
     def compare_array_value(self, dz, value, fill_value):
         if value is not None:
             if fill_value:
-                try:
-                    z = dz.dtype.type(value)
-                except OverflowError:
-                    pass
-                else:
-                    assert_(np.all(dz == z))
+                # Conversion is close to what np.full_like uses
+                # but we  may want to convert directly in the future
+                # which may result in errors (where this does not).
+                z = np.array(value).astype(dz.dtype)
+                assert_(np.all(dz == z))
             else:
                 assert_(np.all(dz == value))
 
@@ -2884,7 +2943,9 @@ class TestLikeFuncs:
         self.check_like_function(np.full_like, 1, True)
         self.check_like_function(np.full_like, 1000, True)
         self.check_like_function(np.full_like, 123.456, True)
-        self.check_like_function(np.full_like, np.inf, True)
+        # Inf to integer casts cause invalid-value errors: ignore them.
+        with np.errstate(invalid="ignore"):
+            self.check_like_function(np.full_like, np.inf, True)
 
     @pytest.mark.parametrize('likefunc', [np.empty_like, np.full_like,
                                           np.zeros_like, np.ones_like])
@@ -3325,6 +3386,14 @@ class TestCross:
         u = np.ones((3, 4, 2))
         for axisc in range(-2, 2):
             assert_equal(np.cross(u, u, axisc=axisc).shape, (3, 4))
+
+    def test_uint8_int32_mixed_dtypes(self):
+        # regression test for gh-19138
+        u = np.array([[195, 8, 9]], np.uint8)
+        v = np.array([250, 166, 68], np.int32)
+        z = np.array([[950, 11010, -30370]], dtype=np.int32)
+        assert_equal(np.cross(v, u), z)
+        assert_equal(np.cross(u, v), -z)
 
 
 def test_outer_out_param():
