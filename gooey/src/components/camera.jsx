@@ -22,6 +22,7 @@ const Camera = () => {
     const [checked, SetChecked] = useState(false);
     const [gridSize, SetGridSize] = useState(15);
     const [enableCamera, SetEnableCamera] = useState(false);
+    const [falsePaths, SetFalsePaths] = useState(true);
 
     const videoConstraints = {
         width: 360,
@@ -42,7 +43,6 @@ const Camera = () => {
         fetch("http:localhost:5000/data/" + JSON.stringify(data)).then(res => res.json().then(data => {console.log(data)}))
         SetEnableCamera(true);
     }
-
 
     useEffect(() => {
         navigator.mediaDevices.enumerateDevices().then(handleDevices);
@@ -68,6 +68,11 @@ const Camera = () => {
                 <span className = "twelve columns">
                     <label className = "three columns offset-by-one column" htmlFor = "gridSize">Grid Dimension</label>
                     <input type = "number" id = "gridSize" className = "two columns" defaultValue = {gridSize} onChange = {ev => SetGridSize(parseInt(ev.target.value))}/>
+                </span>
+
+                <span className = "twelve columns">
+                    <label className = "three columns offset-by-one column" htmlFor = "falsePaths">Generate False Paths</label>
+                    <input type = "checkbox" id = "falsePaths" className = "two columns" onChange = {ev => SetFalsePaths(ev.target.checked)} defaultChecked = {falsePaths}/>
                 </span>
             </div>
 
