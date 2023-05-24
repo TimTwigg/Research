@@ -36,10 +36,10 @@ const Camera = () => {
     const TakeImage = (img) => {
         SetEnableCamera(false);
         SetImage(img);
-        let data = {
-            "gridsize": gridSize
-        }
-        fetch("http:localhost:5000/data/" + JSON.stringify(data)).then(res => res.json().then(data => {console.log(data)}))
+        const arg_gridsize = gridSize;
+        const arg_devicdID = deviceID;
+        // fetch("http:localhost:5000/data/" + JSON.stringify(data)).then(res => res.json().then(data => {console.log(data)}))
+        fetch("http://localhost:5000/data/");
         SetEnableCamera(true);
     }
 
