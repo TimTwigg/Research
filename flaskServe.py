@@ -1,3 +1,6 @@
+from pathlib import Path
+import sys
+sys.path.append(str(Path().absolute() / "Flask"))
 from flask import Flask, request
 from flask_cors import CORS
 import json
