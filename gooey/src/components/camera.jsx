@@ -32,15 +32,15 @@ const Camera = () => {
 
     const handleDevices = useCallback(mediaDevices => {
         SetDevices(mediaDevices.filter(({ kind }) => kind === "videoinput"));
+        SetDeviceID(0)
     }, [SetDevices]);
 
     const TakeImage = async (img) => {
         SetEnableCamera(false);
         SetImage(img);
-        const arg_gridsize = gridSize;
-        const arg_deviceID = deviceID;
-        // fetch("http:localhost:5000/data/" + JSON.stringify(data)).then(res => res.json().then(data => {console.log(data)}))
-        const response = await fetch(`http://localhost:5000/data/gridsize=${arg_gridsize}&deviceID=${arg_deviceID}`);
+        // const arg_gridsize = gridSize;
+        // const arg_deviceID = deviceID;
+        const response = await fetch(`http://localhost:5000/data?gridsize=${gridSize}&deviceID=${deviceID}&falsePaths=${falsePaths}`);
         SetEnableCamera(true);
     }
 
