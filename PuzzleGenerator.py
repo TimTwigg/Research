@@ -1,13 +1,4 @@
-# updated 24 May 2023
-
-###########################################################
-
-# Create an App object, then simply call the appropriate puzzle function
-# each time a signal is recieved
-
-# This is a controller to link the listener and the generation modules.
-
-###########################################################
+# updated 29 May 2023
 
 import subprocess
 import cv2
@@ -34,8 +25,8 @@ class PuzzleGenerator:
     def setSize(self, board_size: int):
         self._grid_size = board_size
         
-    def grabCamera(self):
-        self._cam = cv2.VideoCapture(1, cv2.CAP_DSHOW)
+    def grabCamera(self, cameraID: int = 0):
+        self._cam = cv2.VideoCapture(cameraID, cv2.CAP_DSHOW)
         self.hasCamera = True
         print("Grabbed Camera")
         
@@ -44,7 +35,7 @@ class PuzzleGenerator:
         self.hasCamera = False
         print("Released Camera")
         
-    def takeImage(self, imgName):
+    def takeImage(self, imgName: str):
         if not self.hasCamera:
             self.grabCamera()
         ret, frame = self._cam.read()
@@ -58,12 +49,12 @@ class PuzzleGenerator:
             self.gotBlank = True
     
     def captureGrid(self):
-        self.takeImage("path.png")
+        """Analyze and read images and set grid attribute."""
         reader = gr.GridReader("path.png", "blank.png", self._grid_size)
         grid = reader.readGrid()
         self._grid = grid.tolist()
     
-    def callMaze(self):
+    def callMaze(self, falsePaths: bool = True, lightMode: bool = False):
         self.captureGrid()
         maze = Maze(self._grid)
         print(maze)
@@ -71,7 +62,7 @@ class PuzzleGenerator:
         cmdCoords = (self._x + maze.max_x + 5, self._y + 1, self._z + maze.max_y)
         cmdDirection = (0, -1)
         
-        commands = generate(maze, coords, cmdCoords, cmdDirection, {"falsePaths": True, "light": False})
+        commands = generate(maze, coords, cmdCoords, cmdDirection, {"falsePaths": falsePaths, "light": lightMode})
         
         # compare old commands with new ones to only execute the difference
         # the command block commands are compared this way, the commands which build the actual maze all have to

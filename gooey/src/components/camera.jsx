@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Webcam from "react-webcam";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import "./camera.css";
 import square from "./../images/square.png";
 
@@ -23,6 +25,8 @@ const Camera = () => {
     const [gridSize, SetGridSize] = useState(15);
     const [enableCamera, SetEnableCamera] = useState(false);
     const [falsePaths, SetFalsePaths] = useState(true);
+    const [lightMode, SetLightMode] = useState(false);
+    const [reset, SetReset] = useState(false)
 
     const videoConstraints = {
         width: 360,
@@ -33,18 +37,26 @@ const Camera = () => {
     const handleDevices = useCallback(mediaDevices => {
         SetDevices(mediaDevices.filter(({ kind }) => kind === "videoinput"));
         SetDeviceID(0)
-    }, [SetDevices]);
+    }, [SetDevices, SetDeviceID]);
 
     const TakeImage = async (img) => {
         SetEnableCamera(false);
         SetImage(img);
-        const response = await fetch(`http://localhost:5000/data?gridsize=${gridSize}&deviceID=${deviceID}&falsePaths=${falsePaths}`);
+        const response = await fetch(`http://localhost:5000/data?gridsize=${gridSize}&deviceID=${deviceID}&falsePaths=${falsePaths}&lightMode=${lightMode}&reset=${reset}`);
+        SetReset(false);
+        if (response.status === 500) {
+            toast("Could not interpret grid from image.", {type: "error", pauseOnFocusLoss: false});
+        }
+        else {
+            toast("Image taken.", {type: "success", pauseOnFocusLoss: false});
+        }
         SetEnableCamera(true);
     }
 
     useEffect(() => {
         navigator.mediaDevices.enumerateDevices().then(handleDevices);
-    }, [handleDevices]);
+        SetReset(true);
+    }, [handleDevices, SetReset]);
 
     return (
         <div className = "Camera">
@@ -71,6 +83,11 @@ const Camera = () => {
                 <span className = "twelve columns">
                     <label className = "three columns offset-by-one column" htmlFor = "falsePaths">Generate False Paths</label>
                     <input type = "checkbox" id = "falsePaths" className = "two columns" onChange = {ev => SetFalsePaths(ev.target.checked)} defaultChecked = {falsePaths}/>
+                </span>
+
+                <span className = "twelve columns">
+                    <label className = "three columns offset-by-one column" htmlFor = "lightMode">Light Mode</label>
+                    <input type = "checkbox" id = "lightMode" className = "two columns" onChange = {ev => SetLightMode(ev.target.checked)} defaultChecked = {lightMode}/>
                 </span>
             </div>
 

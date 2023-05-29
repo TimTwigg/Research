@@ -1,59 +1,70 @@
-# updated 3 November 2022
+# updated 29 May 2023
 
-from PuzzleGenerator import PuzzleGenerator
+import atexit
+import threading
+import subprocess
+import ctypes
+from datetime import datetime
 
-import usb.core
-import usb.util
+LOGFILE = "log.txt"
 
-def listen(dev, endpoint_in, endpoint_out):
-    app = PuzzleGenerator()
+def log(msg: str):
+    prefix = datetime.now().strftime("%d/%b/%Y %H:%M:%S")
+    with open(LOGFILE, "a") as f:
+        f.write(f"[{prefix}] {msg}\n")
+
+# adapted from https://www.geeksforgeeks.org/python-different-ways-to-kill-a-thread/
+class EndableThread(threading.Thread):
+    def getID(self) -> int:
+        if hasattr(self, "_thread_id"):
+            return self._thread_id
+        for id, thread in threading._active.items():
+            if thread is self:
+                return id
     
-    while(True):
-        try:
-            buf = dev.read(endpoint_in.bEndpointAddress, 64, 1000)
-            buf = bytearray(buf)
-            code = buf[1]
-            if code == 0:
-                continue
-            elif code == 1:
-                if not app.gotBlank:
-                    app.takeImage("blank.png")
-                    print("Taken blank")
-                else:
-                    app.callMaze()
-            elif code == 2:
-                app.callSound()
-        except usb.core.USBTimeoutError as e:
-            pass
-        except NameError:
-            # catches the error thrown by gridReaderFinal when it doesn't find
-            # the grid and the 'biggest' variable is not defined.
-            print("Could not interpret image. Re-focus camera")
-            break
+    def end(self):
+        thread_id = ctypes.c_long(self.getID())
+        res = ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, ctypes.py_object(SystemExit))
+        if res > 1:
+            ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, None)
+            log(f"[ERROR] Failed to end thread: {self.name}")
+            raise SystemError("PyThreadState_SetAsyncExc failed")
+        log(f"[End] {self.name}")
 
-def start():
-    dev = usb.core.find(idVendor = 0x16C0, idProduct = 0x0486)
+def exit_handler():
+    for t in threads:
+        t.end()
+    print("Program Terminated.")
 
-    if dev is None:
-        raise ValueError("Device not found")
+def server():
+    log("[Start] Server")
+    subprocess.call(["python", "flaskServe.py"], **kwargs)
 
-    endpoint_in = dev[0][(0, 0)][0]
-    endpoint_out = dev[0][(0 ,0)][1]
-
-    try:
-        dev.reset()
-    except Exception as e:
-        print("reset", e)
-
-    listen(dev, endpoint_in, endpoint_out)
-
-def main():
-    try:
-        start()
-    except usb.core.USBError as e:
-        print(e)
-        if input("Reconnect (y/n)?") == "y":
-            main()
+def website():
+    log("[Start] WebInterface")
+    subprocess.call(["gooey\\start.bat"], **kwargs)
 
 if __name__ == "__main__":
-    main()
+    atexit.register(exit_handler)
+    
+    threads: list[EndableThread] = []
+    
+    kwargs = {
+        "stdin": subprocess.PIPE,
+        "stdout": subprocess.PIPE,
+        "stderr": subprocess.PIPE,
+    }
+    
+    threads.append(EndableThread(target = server, name = "ServerThread", daemon = True))
+    threads.append(EndableThread(target = website, name = "WebInterfaceThread", daemon = True))
+    
+    for t in threads:
+        t.start()
+    
+    print("Server Started")
+    print("Web Interface started (may take a minute to launch fully)")
+    print("Press CTRL+C to quit")
+    while True:
+        # loop to avoid exits that don't cause a KeyboardInterrupt error
+        # other exits will call the exit handler but not actually kill the threads
+        input("")

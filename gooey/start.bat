@@ -1,0 +1,2 @@
+cd gooey
+npm start
