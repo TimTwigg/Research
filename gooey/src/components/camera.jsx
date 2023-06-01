@@ -19,7 +19,7 @@ function saveImage(image) {
 
 const Camera = () => {
     const [devices, SetDevices] = useState([]);
-    const [deviceID, SetDeviceID] = useState("");
+    const [deviceID, SetDeviceID] = useState(0);
     const [image, SetImage] = useState(square);
     const [checked, SetChecked] = useState(false);
     const [gridSize, SetGridSize] = useState(15);
@@ -36,10 +36,13 @@ const Camera = () => {
 
     const handleDevices = useCallback(mediaDevices => {
         SetDevices(mediaDevices.filter(({ kind }) => kind === "videoinput"));
-        SetDeviceID(0)
-    }, [SetDevices, SetDeviceID]);
+    }, [SetDevices]);
 
     const TakeImage = async (img) => {
+        saveImage(img);
+        SetImage(img);
+        return
+
         SetEnableCamera(false);
         SetImage(img);
         const response = await fetch(`http://localhost:5000/data?gridsize=${gridSize}&deviceID=${deviceID}&falsePaths=${falsePaths}&lightMode=${lightMode}&reset=${reset}`);

@@ -93,8 +93,8 @@ class GridReader:
                     max_area = area
                     biggest = i
             c += 1
-        #cv2.imshow('name of the window', thresh)
-        #cv2.waitKey(0)
+        # cv2.imshow('name of the window', thresh)
+        # cv2.waitKey(0)
         # warps perspective to ensure the gridlines are straight as possible
         if biggest.size != 0:
             #print(f'biggest: {biggest}')

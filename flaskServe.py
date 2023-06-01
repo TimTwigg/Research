@@ -22,7 +22,7 @@ def test():
     
     # get params from request
     gridsize = int(request.args.get("gridsize"))
-    deviceID = int(request.args.get("deviceID"))
+    deviceID = int(request.args.get("deviceID"), 16)
     falsePaths = request.args.get("falsePaths")
     lightMode = request.args.get("lightMode")
     reset = request.args.get("reset")
@@ -33,7 +33,7 @@ def test():
     
     # call PuzzleGenerator
     PG.setSize(gridsize)
-    PG.grabCamera(deviceID)
+    PG.grabCamera(1)
     if not PG.gotBlank or reset:
         PG.takeImage("blank.png")
         log("Taken Blank")
@@ -42,12 +42,12 @@ def test():
         PG.takeImage("path.png")
         log("Taken Image")
         PG.releaseCamera()
-        try:
-            PG.callMaze(falsePaths, lightMode)
-        except UnboundLocalError:
-            # catch "cannot access local variable 'biggest'" error from gridreader.warp
-            log("Could not interpret grid from image.")
-            return Response(status = 500)
+        # try:
+        PG.callMaze(falsePaths, lightMode)
+        # except UnboundLocalError:
+        #     # catch "cannot access local variable 'biggest'" error from gridreader.warp
+        #     log("Could not interpret grid from image.")
+        #     return Response(status = 500)
     return {}
 
 if __name__ == "__main__":
