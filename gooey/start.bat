@@ -1,2 +1,4 @@
-cd gooey
-npm start
+@ECHO OFF
+CD gooey
+@REM npm start
+serve -s build

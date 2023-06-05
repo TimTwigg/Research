@@ -18,12 +18,19 @@ class PuzzleGenerator:
         self._commands = []
         self.hasCamera = False
         self.gotBlank = False
+        self._blank_file_ = None
         
     def __del__(self):
-        self.releaseCamera()
+        try:
+            self.releaseCamera()
+        except AttributeError:
+            pass
     
     def setSize(self, board_size: int):
         self._grid_size = board_size
+    
+    def setBlank(self, filename: str):
+        self._blank_file_ = filename
         
     def grabCamera(self, cameraID: int = 0):
         self._cam = cv2.VideoCapture(cameraID, cv2.CAP_DSHOW)
@@ -48,14 +55,16 @@ class PuzzleGenerator:
         if imgName == "blank.png":
             self.gotBlank = True
     
-    def captureGrid(self):
+    def captureGrid(self, imageFile: str):
         """Analyze and read images and set grid attribute."""
-        reader = gr.GridReader("path.png", "blank.png", self._grid_size)
+        if self._blank_file_ is None:
+            raise Exception()
+        reader = gr.GridReader(imageFile, self._blank_file_, self._grid_size)
         grid = reader.readGrid()
         self._grid = grid.tolist()
     
-    def callMaze(self, falsePaths: bool = True, lightMode: bool = False):
-        self.captureGrid()
+    def callMaze(self, imageFile: str, falsePaths: bool = True, lightMode: bool = False):
+        self.captureGrid(imageFile)
         maze = Maze(self._grid)
         print(maze)
         coords = (self._x, self._y, self._z)

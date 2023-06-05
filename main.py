@@ -1,10 +1,11 @@
-# updated 29 May 2023
+# updated 5 June 2023
 
 import atexit
 import threading
 import subprocess
 import ctypes
 from datetime import datetime
+import webbrowser
 
 LOGFILE = "log.txt"
 
@@ -44,6 +45,9 @@ def website():
     log("[Start] WebInterface")
     subprocess.call(["gooey\\start.bat"], **kwargs)
 
+def openBrowser():
+    webbrowser.open_new("http://localhost:3000")
+
 if __name__ == "__main__":
     atexit.register(exit_handler)
     
@@ -62,8 +66,9 @@ if __name__ == "__main__":
         t.start()
     
     print("Server Started")
-    print("Web Interface started (may take a minute to launch fully)")
+    print("Web Interface started")
     print("Press CTRL+C to quit")
+    threading.Timer(1, openBrowser).start()
     while True:
         # loop to avoid exits that don't cause a KeyboardInterrupt error
         # other exits will call the exit handler but not actually kill the threads

@@ -13,8 +13,8 @@ function saveBase64AsFile(base64, fileName) {
     link.click();
 }
 
-function saveImage(image) {
-    saveBase64AsFile(image, "capture.png");
+function saveImage(image, filename) {
+    saveBase64AsFile(image, filename);
 }
 
 const Camera = () => {
@@ -39,21 +39,20 @@ const Camera = () => {
     }, [SetDevices]);
 
     const TakeImage = async (img) => {
-        saveImage(img);
         SetImage(img);
-        return
-
-        SetEnableCamera(false);
-        SetImage(img);
-        const response = await fetch(`http://localhost:5000/data?gridsize=${gridSize}&deviceID=${deviceID}&falsePaths=${falsePaths}&lightMode=${lightMode}&reset=${reset}`);
+        // generate filename
+        let filename = `image_${Date.now()}.png`;
+        saveImage(img, filename);
+        // send message to flask to trigger program
+        const response = await fetch(`http://localhost:5000/data?gridsize=${gridSize}&falsePaths=${falsePaths}&lightMode=${lightMode}&reset=${reset}&filename=${filename}`);
         SetReset(false);
+        
         if (response.status === 500) {
             toast("Could not interpret grid from image.", {type: "error", pauseOnFocusLoss: false});
         }
         else {
             toast("Image taken.", {type: "success", pauseOnFocusLoss: false});
         }
-        SetEnableCamera(true);
     }
 
     useEffect(() => {
