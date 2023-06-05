@@ -41,18 +41,24 @@ const Camera = () => {
     const TakeImage = async (img) => {
         SetImage(img);
         // generate filename
-        let filename = `image_${Date.now()}.png`;
+        let filename = `img_${Date.now()}.png`;
         saveImage(img, filename);
         // send message to flask to trigger program
         const response = await fetch(`http://localhost:5000/data?gridsize=${gridSize}&falsePaths=${falsePaths}&lightMode=${lightMode}&reset=${reset}&filename=${filename}`);
         SetReset(false);
+        document.getElementById("imageCategory").innerText = "Grid";
         
         if (response.status === 500) {
-            toast("Could not interpret grid from image.", {type: "error", pauseOnFocusLoss: false});
+            toast("Could not interpret grid from image.", {type: "error", pauseOnFocusLoss: false, pauseOnHover: false});
         }
         else {
-            toast("Image taken.", {type: "success", pauseOnFocusLoss: false});
+            toast("Image taken.", {type: "success", pauseOnFocusLoss: false, pauseOnHover: false});
         }
+    }
+
+    const resetState = () => {
+        SetReset(true);
+        document.getElementById("imageCategory").innerText = "Blank";
     }
 
     useEffect(() => {
@@ -91,6 +97,11 @@ const Camera = () => {
                     <label className = "three columns offset-by-one column" htmlFor = "lightMode">Light Mode</label>
                     <input type = "checkbox" id = "lightMode" className = "two columns" onChange = {ev => SetLightMode(ev.target.checked)} defaultChecked = {lightMode}/>
                 </span>
+            </div>
+
+            <div className = "twelve columns">
+                <p className = "one-half column"><u>Taking:</u> <span id = "imageCategory">Blank</span></p>
+                <button className = "four columns offset-by-two columns" onClick = {() => resetState()}>Reset</button>
             </div>
 
             <div className = "one-half column">
