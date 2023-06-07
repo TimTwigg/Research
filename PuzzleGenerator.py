@@ -86,7 +86,7 @@ class PuzzleGenerator:
         
         with open("build.mcfunction", "w") as f:
             f.write("\n".join(commands))
-        
+            
         setFocus(".*Minecraft.*")
         subprocess.call(["runCommands\\runCommands.exe", "build.mcfunction"])
         

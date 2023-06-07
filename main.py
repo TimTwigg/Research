@@ -54,9 +54,9 @@ if __name__ == "__main__":
     threads: list[EndableThread] = []
     
     kwargs = {
-        "stdin": subprocess.PIPE,
-        "stdout": subprocess.PIPE,
-        "stderr": subprocess.PIPE,
+        # "stdin": subprocess.PIPE,
+        # "stdout": subprocess.PIPE,
+        # "stderr": subprocess.PIPE,
     }
     
     threads.append(EndableThread(target = server, name = "ServerThread", daemon = True))

@@ -7,9 +7,10 @@ class GridReader:
         image -- path to theimage
         baseline -- path to the baseline image
         squares_on_side -- number of squares on a single side of the grid
-        '''
+        '''        
         self.__image = cv2.imread(image)
         self.__baseline = cv2.imread(baseline)
+        print(len(self.__image), len(self.__baseline))
         self.__squares_on_side = squares_on_side # num squares on a single side of the grid
         self.__widthImg = self.__heightImg = self.__squares_on_side * 50 + 50 # size of the image in pixels
         self.__grid = np.zeros((self.__squares_on_side, self.__squares_on_side), dtype=int)

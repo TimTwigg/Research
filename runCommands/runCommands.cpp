@@ -77,6 +77,8 @@ int main(int argc, char** argv) {
     // assumes the minecraft is loaded into the world, with escape then pressed to focus another app
     press(ESCAPE);
 
+    Sleep(1000);
+
     while (in) {
         std::vector<INPUT> v;
         std::string command;
@@ -87,11 +89,11 @@ int main(int argc, char** argv) {
             append(c, v);
         }
 
-        Sleep(5);
+        Sleep(25);
         press(SLASH);
-        Sleep(50);
+        Sleep(100);
         SendInput(v.size(), v.data(), sizeof(INPUT));
-        Sleep(1);
+        Sleep(100);
         press(ENTER);
     }
 
