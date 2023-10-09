@@ -1,4 +1,4 @@
-// updated 6 January 2023
+// updated 9 October 2023
 // C++ module to run commands by simulating keyboard input
 
 #include <string>
@@ -22,10 +22,12 @@
 #define SLASH 0x35
 #endif
 
+// Append a character to the input vector
 void append(char c, std::vector<INPUT>& v) {
     // Adapted from Sam's answer at
     // https://stackoverflow.com/questions/2167156/sendinput-isnt-sending-the-correct-shifted-characters
     
+    // key down
     INPUT input;
     input.type = INPUT_KEYBOARD;
     input.ki.wVk = 0;
@@ -35,6 +37,7 @@ void append(char c, std::vector<INPUT>& v) {
     input.ki.dwExtraInfo = 0;
     v.push_back(input);
 
+    // key up
     INPUT input2;
     input2.type = INPUT_KEYBOARD;
     input2.ki.wVk = 0;
@@ -45,6 +48,7 @@ void append(char c, std::vector<INPUT>& v) {
     v.push_back(input2);
 }
 
+// Press the key designated by code
 void press(int code) {
     INPUT KEY_B;
 
@@ -62,12 +66,14 @@ void press(int code) {
 
 // run by calling exe with single arg of the filename to run
 int main(int argc, char** argv) {
+    // arguments should be [thisFileName, fileNameToRun]
     if (argc != 2) {
         std::cout << "Invalid argument count: " << argc << std::endl;
         return 1;
     }
     std::string filename = argv[1];
 
+    // verify that the file exists
     std::ifstream in{filename};
     if (!in) {
         std::cout << "File not Found: " << filename << std::endl;
@@ -77,6 +83,7 @@ int main(int argc, char** argv) {
     // assumes the minecraft is loaded into the world, with escape then pressed to focus another app
     press(ESCAPE);
 
+    // Pause before beginning to run commands
     Sleep(1000);
 
     while (in) {
@@ -85,16 +92,17 @@ int main(int argc, char** argv) {
         std::getline(in, command);
         if (command.size() < 1) break;
 
+        // add characters of command to Input vector
         for (char c : command) {
             append(c, v);
         }
 
-        Sleep(25);
-        press(SLASH);
-        Sleep(100);
-        SendInput(v.size(), v.data(), sizeof(INPUT));
-        Sleep(100);
-        press(ENTER);
+        Sleep(25); // pause
+        press(SLASH); // open command line
+        Sleep(100); // wait for command line to open
+        SendInput(v.size(), v.data(), sizeof(INPUT)); // print command
+        Sleep(100); // wait for command to print
+        press(ENTER); // press enter to run command
     }
 
     return 0;

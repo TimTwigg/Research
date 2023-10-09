@@ -1,4 +1,4 @@
-# updated 5 June 2022
+# updated 9 October 2023
 
 import win32gui
 import win32con
@@ -38,6 +38,4 @@ def setFocus(wildcard: str) -> None:
     w.set_foreground()
 
 if __name__ == "__main__":
-    w = WindowMgr()
-    w.find_window_wildcard(".*Minecraft.*")
-    w.set_foreground()
+    setFocus(".*Minecraft.*")
