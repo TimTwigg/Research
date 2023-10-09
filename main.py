@@ -1,4 +1,5 @@
-# updated 5 June 2023
+# updated 9 October 2023
+# This module uses threading to run both the server and the website from one terminal, with one command/click
 
 import atexit
 import threading
@@ -10,13 +11,27 @@ import webbrowser
 LOGFILE = "log.txt"
 
 def log(msg: str):
+    """Log a message to the log file defined by the LOGFILE constant
+
+    Args:
+        msg (str): the message to log
+    """
     prefix = datetime.now().strftime("%d/%b/%Y %H:%M:%S")
     with open(LOGFILE, "a") as f:
         f.write(f"[{prefix}] {msg}\n")
 
 # adapted from https://www.geeksforgeeks.org/python-different-ways-to-kill-a-thread/
 class EndableThread(threading.Thread):
+    """Subclass of Thread to add method for killing the thread directly"""
+    def __init__(self, *args, **kwargs):
+        super().__init__(args = args, kwargs = kwargs)
+    
     def getID(self) -> int:
+        """Get the thread's ID
+
+        Returns:
+            int: the ID
+        """
         if hasattr(self, "_thread_id"):
             return self._thread_id
         for id, thread in threading._active.items():
@@ -24,6 +39,7 @@ class EndableThread(threading.Thread):
                 return id
     
     def end(self):
+        """Kill this thread"""
         thread_id = ctypes.c_long(self.getID())
         res = ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, ctypes.py_object(SystemExit))
         if res > 1:
@@ -33,41 +49,49 @@ class EndableThread(threading.Thread):
         log(f"[End] {self.name}")
 
 def exit_handler():
+    """Handle program exit by killing all threads"""
     for t in threads:
         t.end()
     print("Program Terminated.")
 
 def server():
+    """Start server"""
     log("[Start] Server")
     subprocess.call(["python", "flaskServe.py"], **kwargs)
 
 def website():
+    """Start website"""
     log("[Start] WebInterface")
     subprocess.call(["gooey\\start.bat"], **kwargs)
 
 def openBrowser():
+    """Open the browser to the localhost address hosted by the server"""
     webbrowser.open_new("http://localhost:3000")
 
 if __name__ == "__main__":
+    # register the exit handler
     atexit.register(exit_handler)
     
     threads: list[EndableThread] = []
     
+    # uncomment these to redirect input/output for the server and website
     kwargs = {
         # "stdin": subprocess.PIPE,
         # "stdout": subprocess.PIPE,
         # "stderr": subprocess.PIPE,
     }
     
+    # create threads
     threads.append(EndableThread(target = server, name = "ServerThread", daemon = True))
     threads.append(EndableThread(target = website, name = "WebInterfaceThread", daemon = True))
     
+    # start threads
     for t in threads:
         t.start()
+        print(f"{t.name} started")
     
-    print("Server Started")
-    print("Web Interface started")
     print("Press CTRL+C to quit")
+    # wait 1 second then open the browser
     threading.Timer(1, openBrowser).start()
     while True:
         # loop to avoid exits that don't cause a KeyboardInterrupt error
