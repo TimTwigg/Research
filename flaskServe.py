@@ -1,8 +1,11 @@
+# Updated 9 October 2023
+# Flask server to connect the python puzzle generation to the website
+
 from pathlib import Path
 import sys
 import os
 from datetime import datetime
-sys.path.append(str(Path().absolute() / "Flask"))
+sys.path.append(str(Path().absolute() / "Flask")) # add the local distribution of Flask to the path
 from flask import Flask, request, Response
 from flask_cors import CORS
 from PuzzleGenerator import PuzzleGenerator
@@ -10,6 +13,11 @@ from PuzzleGenerator import PuzzleGenerator
 LOGFILE = "log.txt"
 
 def log(msg: str):
+    """Log a message to the log file defined by the LOGFILE constant
+
+    Args:
+        msg (str): the message to log
+    """
     prefix = datetime.now().strftime("%d/%b/%Y %H:%M:%S")
     with open(LOGFILE, "a") as f:
         f.write(f"[{prefix}] {msg}\n")
@@ -18,6 +26,7 @@ def log(msg: str):
 def get_download_path() -> str:
     """Returns the default downloads path for linux or windows"""
     if os.name == "nt":
+        # windows
         import winreg
         sub_key = r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
         downloads_guid = "{374DE290-123F-4565-9164-39C4925E467B}"
@@ -25,6 +34,7 @@ def get_download_path() -> str:
             location = winreg.QueryValueEx(key, downloads_guid)[0]
         return location
     else:
+        # linux/unix
         return os.path.join(os.path.expanduser("~"), "downloads")
 
 app = Flask(__name__)
