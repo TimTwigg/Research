@@ -1,3 +1,5 @@
+# deprecated - replaced by C++ module
+
 import keyboard as kb
 import mouse
 import time

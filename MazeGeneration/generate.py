@@ -1,4 +1,4 @@
-# updated 3 November 2022
+# updated 9 October 2023
 # generate mc commands from Maze
 
 from MazeGeneration.Maze import Maze, DIR
@@ -6,13 +6,27 @@ from enum import Enum
 from MazeGeneration.transform import transform, generateFalsePaths
 
 def _generateCommands(maze: Maze, coords: tuple[int], cmdCoords: tuple[int], cmdDirection: tuple[int]) -> list[str]:
+    """Generate the commands for the maze itself
+
+    Args:
+        maze (Maze): the Maze object with all paths already finalized
+        coords (tuple[int]): coordinates of the bottom left corner in Minecraft
+        cmdCoords (tuple[int]): coordinates of the first block in the command block chain
+        cmdDirection (tuple[int]): direction of the command block chains from the first block
+
+    Returns:
+        list[str]: the list of commands generated
+    """
+    
     assert len(coords) == 3, "Coords must have x, y, and z values"
     assert len(cmdCoords) == 3, "cmdCoords must have x, y, and z values"
     assert len(cmdDirection) == 2, "cmdDirection must have x and z values"
 
     x, y, z = coords
+    # first command to fill the space
     commands = [f"fill {x-1} {y} {z-1} {x+maze.max_x} {y+3} {z+maze.max_y} {Blocks.WALL.value}"]
 
+    # go through the maze and generate commands to hollow out the path
     for _z in range(maze.max_y):
         for _x in range(maze.max_x):
             block_type = TYPES[maze.get(_x, _z)]
@@ -40,9 +54,22 @@ def _generateCommands(maze: Maze, coords: tuple[int], cmdCoords: tuple[int], cmd
 
 
 def _generateCommandBlocks(maze: Maze, coords: tuple[int], cmdCoords: tuple[int], cmdDirection: tuple[int]) -> list[str]:
+    """Generate the commands for the command block chains
+
+    Args:
+        maze (Maze): the Maze object with only the true path marked
+        coords (tuple[int]): the coordinates of the bottom left corner of the maze in Minecraft
+        cmdCoords (tuple[int]): the coordinates of the first command block in the command block chain
+        cmdDirection (tuple[int]): the direction of the command block chains from the first block
+
+    Returns:
+        list[str]: the list of commands generated
+    """
+    
     assert maze.isPath(0, maze.max_y-1, DIR.HERE, [8]), "Start of maze must be in lower left hand corner and must go straight for at least 2 blocks before turn"
     assert maze.isPath(0, maze.max_y-2, DIR.HERE) != maze.isPath(1, maze.max_y-1, DIR.HERE), "Must have only one path from start"
     
+    # direction sound
     SOUND = "block.note_block.banjo hostile"
     commands = []
     visited = []
@@ -56,11 +83,17 @@ def _generateCommandBlocks(maze: Maze, coords: tuple[int], cmdCoords: tuple[int]
     else:
         facing = "west" if x_ < 0 else "east"
     
+    # set up scoreboard in Minecraft
     commands.append("scoreboard objectives add darkRoom dummy")
+    # place first block in chain
     commands.append(f"setblock {cmdX - 1*x_} {cmdY} {cmdZ - 1*z_} repeating_command_block[facing={facing}] destroy")
     SOUND_SWITCH = (cmdX - 2*x_, cmdY, cmdZ - 2*z_)
 
+    ########################################################################
     # sound command blocks
+    
+    # the loop follows the path, creating a command block at each turn
+    
     while True:
         block_type = TYPES[maze.get(*pos)]
         if block_type == Blocks.START or block_type == Blocks.PATH:
@@ -174,7 +207,18 @@ def _generateCommandBlocks(maze: Maze, coords: tuple[int], cmdCoords: tuple[int]
     return commands
 
 
-def _findDirection(maze: Maze, x: int, z: int, visited: list[int]) -> tuple[int]:
+def _findDirection(maze: Maze, x: int, z: int, visited: list[tuple[int]]) -> tuple[int]:
+    """Find the direction of a turn in the maze
+
+    Args:
+        maze (Maze): the Maze object with only the true path marked
+        x (int): current x position
+        z (int): current z position
+        visited (list[tuple[int]]): the list of positions already visited
+
+    Returns:
+        tuple[int]: x, z coordinate modifiers indicating a point to the side of the path in the correct direction
+    """
     neighbours = maze.getNeighbours(x, z)
     for n in neighbours:
         if n not in visited and TYPES[maze.get(*n)] in [Blocks.PATH, Blocks.PATH_TURN]:
@@ -184,19 +228,19 @@ def _findDirection(maze: Maze, x: int, z: int, visited: list[int]) -> tuple[int]
                     if (t[0] == n[0]): return Direction.UP.value if t[1] < n[1] else Direction.DOWN.value
                     return Direction.LEFT.value if t[0] < n[0] else Direction.RIGHT.value
 
-def generate(maze: Maze, coords: tuple[int], cmdCoords: tuple[int], cmdDirection: tuple[int], filename: str,
+def generate(maze: Maze, coords: tuple[int, int, int], cmdCoords: tuple[int], cmdDirection: tuple[int], filename: str,
         light: bool = False, falsePaths: bool = True) -> None:
     """
     Generates the commands required to create the given maze and returns a list of strings.
     Start of maze must be in lower left hand corner of maze (as seen in 2D)
-    \n
-    params:\n
-        maze :: Maze object, only the base path should be marked (with '1') - turn, false path, start, and end markers will be generated\n
-        coords :: tuple(x, y, z) North-Western corner of maze (an extra ring of wall will be constructed around the maze)\n
-        cmdCoords :: tuple(x, y, z) Position of first block in command block chain\n
-        cmdDirection :: tuple(x, z) Direction of command block chain from first block\n
-        light :: bool, change to light mode, default false\n
-        falsePaths :: bool, generate false paths, default true
+
+    Args:
+        maze (Maze): Maze object, only the base path should be marked (with '1') - turn, false path, start, and end markers will be generated
+        coords (tuple[int, int, int]): North-Western corner of maze (an extra ring of wall will be constructed around the maze)
+        cmdCoords (tuple[int, int, int]): Position of first block in command block chain
+        cmdDirection (tuple[int, int]): Direction of command block chain from first block
+        light (bool): change to light mode, default false
+        falsePaths (bool): generate false paths, default true
     """
     global Direction, Blocks, TYPES
     class Direction(Enum):
@@ -223,16 +267,20 @@ def generate(maze: Maze, coords: tuple[int], cmdCoords: tuple[int], cmdDirection
     }
 
     maze = transform(maze)
-    commands = []
+    commands: list[str] = []
     x, y, z = coords
-    commands.append(f"fill {x-3} {y-2} {z-3} {x + maze.max_x + 14} {y+8} {z+ maze.max_y + 12} air")
-    commands.append("gamerule doDaylightCycle false")
-    commands.append("gamerule commandBlockOutput false")
-    commands.append("gamerule doWeatherCycle false")
-    commands.append("gamerule doTraderSpawning false")
+    # starter commands
+    commands.append(f"fill {x-3} {y-2} {z-3} {x + maze.max_x + 14} {y+8} {z+ maze.max_y + 12} air") # clear the workspace
+    commands.append("gamerule doDaylightCycle false") # eternal daylight
+    commands.append("gamerule commandBlockOutput false") # don't flood the screen with command block output
+    commands.append("gamerule doWeatherCycle false") # no rain/snow
+    commands.append("gamerule doTraderSpawning false") # no annoying traders
+    # generate the command blocks
     commands += _generateCommandBlocks(maze, coords, cmdCoords, cmdDirection)
     if falsePaths:
+        # generate some false paths
         maze = generateFalsePaths(maze)
+    # generate the maze creation commands
     commands += _generateCommands(maze, coords, cmdCoords, cmdDirection)
     
     return commands
