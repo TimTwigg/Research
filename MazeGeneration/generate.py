@@ -1,4 +1,4 @@
-# updated 9 October 2023
+# updated 12 October 2023
 # generate mc commands from Maze
 
 from MazeGeneration.Maze import Maze, DIR
@@ -228,7 +228,7 @@ def _findDirection(maze: Maze, x: int, z: int, visited: list[tuple[int]]) -> tup
                     if (t[0] == n[0]): return Direction.UP.value if t[1] < n[1] else Direction.DOWN.value
                     return Direction.LEFT.value if t[0] < n[0] else Direction.RIGHT.value
 
-def generate(maze: Maze, coords: tuple[int, int, int], cmdCoords: tuple[int], cmdDirection: tuple[int], filename: str,
+def generate(maze: Maze, coords: tuple[int, int, int], cmdCoords: tuple[int, int, int], cmdDirection: tuple[int, int],
         light: bool = False, falsePaths: bool = True) -> None:
     """
     Generates the commands required to create the given maze and returns a list of strings.

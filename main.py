@@ -23,8 +23,9 @@ def log(msg: str):
 # adapted from https://www.geeksforgeeks.org/python-different-ways-to-kill-a-thread/
 class EndableThread(threading.Thread):
     """Subclass of Thread to add method for killing the thread directly"""
-    def __init__(self, *args, **kwargs):
+    def __init__(self, name: str, *args, **kwargs):
         super().__init__(args = args, kwargs = kwargs)
+        self.name = name
     
     def getID(self) -> int:
         """Get the thread's ID
