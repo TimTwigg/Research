@@ -1,4 +1,4 @@
-# updated 9 October 2023
+# updated 30 October 2023
 # This module uses threading to run both the server and the website from one terminal, with one command/click
 
 import atexit
@@ -9,6 +9,7 @@ from datetime import datetime
 import webbrowser
 
 LOGFILE = "log.txt"
+HIDE_OUTPUT = False
 
 def log(msg: str):
     """Log a message to the log file defined by the LOGFILE constant
@@ -24,7 +25,7 @@ def log(msg: str):
 class EndableThread(threading.Thread):
     """Subclass of Thread to add method for killing the thread directly"""
     def __init__(self, name: str, *args, **kwargs):
-        super().__init__(args = args, kwargs = kwargs)
+        super().__init__(*args, **kwargs)
         self.name = name
     
     def getID(self) -> int:
@@ -75,12 +76,13 @@ if __name__ == "__main__":
     
     threads: list[EndableThread] = []
     
-    # uncomment these to redirect input/output for the server and website
-    kwargs = {
-        # "stdin": subprocess.PIPE,
-        # "stdout": subprocess.PIPE,
-        # "stderr": subprocess.PIPE,
-    }
+    if HIDE_OUTPUT:
+        kwargs = {
+            "stdout": subprocess.PIPE,
+            "stderr": subprocess.PIPE,
+        }
+    else:
+        kwargs = {}
     
     # create threads
     threads.append(EndableThread(target = server, name = "ServerThread", daemon = True))
