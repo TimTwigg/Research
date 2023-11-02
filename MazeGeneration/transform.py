@@ -1,6 +1,7 @@
-# updated 9 October 2023
+# updated 2 November 2023
 # transform plain maze into correct protocol and generate false paths
 
+from copy import deepcopy
 from MazeGeneration.Maze import Maze, DIR
 
 def transform(maze: Maze) -> Maze:
@@ -12,6 +13,8 @@ def transform(maze: Maze) -> Maze:
     Returns:
         Maze: the transformed Maze
     """
+    if not maze.isPath(0, maze.max_y-1, path_codes = [1]):
+        maze = fillGap(maze)
     assert maze.isPath(0, maze.max_y-1, path_codes = [1]), "Maze must start in bottom left corner"
     maze.set(0, maze.max_y-1, 8) # set start block
     pos: tuple[int, int] = (0, maze.max_y-1) # set start pos
@@ -49,6 +52,40 @@ def transform(maze: Maze) -> Maze:
     for n in [i for i in maze.getNeighbours(*pos) if maze.isPath(*i, DIR.HERE, [2])]:
         maze.set(*n, 1)
 
+    return maze
+
+def fillGap(maze: Maze) -> Maze:
+    """Attempt to fill the gap in a maze which was improperly captured from image along the left hand side.
+
+    Args:
+        maze (Maze): the broken maze
+
+    Returns:
+        Maze: the fixed maze
+    """
+    x, z = 0, maze.max_y-1
+    if maze.get(x, z) == 1:
+        # this function was called when not applicable
+        return maze
+    m = deepcopy(maze)
+    
+    while z >= 0:
+        m.set(x, z, 1)
+        cell = m.getCell(x, z)
+        up = m.isPath(*cell.up(), path_codes = [0])
+        right = m.isPath(*cell.right(), path_codes = [0])
+        if up != right:
+            # 1 (and only 1) neighbor is a path - we have filled the gap and joined the path
+            # return the edited maze
+            return m
+        if not up and not right:
+            # error: filling this gap creates a malformed maze.
+            # return the original maze with no changes
+            return maze
+        z -= 1
+    
+    # setting the entire left hand side to path did not help
+    # return the original maze with no changes
     return maze
 
 def generateFalsePaths(maze: Maze) -> Maze:
