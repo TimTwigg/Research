@@ -145,7 +145,8 @@ if __name__ == '__main__':
     #r = GridReader('grid1red.png', 1y)
     # r = GridReader('opencv_frame_0.png', 15)
     # r = GridReader('opencv_frame_1.png', 15)
-    r = GridReader('path.jpg', 'blank.jpg', 15)
+    # r = GridReader('path.jpg', 'blank.jpg', 15)
     # cv2.imshow()
-    print(r.readGrid())
+    # print(r.readGrid())
+    print("GridReader")
 
