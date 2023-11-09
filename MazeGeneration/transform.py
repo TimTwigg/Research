@@ -1,4 +1,4 @@
-# updated 2 November 2023
+# updated 9 November 2023
 # transform plain maze into correct protocol and generate false paths
 
 from copy import deepcopy
@@ -72,8 +72,11 @@ def fillGap(maze: Maze) -> Maze:
     while z >= 0:
         m.set(x, z, 1)
         cell = m.getCell(x, z)
-        up = m.isPath(*cell.up(), path_codes = [0])
-        right = m.isPath(*cell.right(), path_codes = [0])
+        try:
+            up = m.isPath(*cell.up(), path_codes = [0])
+            right = m.isPath(*cell.right(), path_codes = [0])
+        except TypeError:
+            break
         if up != right:
             # 1 (and only 1) neighbor is a path - we have filled the gap and joined the path
             # return the edited maze
