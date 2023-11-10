@@ -113,13 +113,9 @@ class GridReader:
 
         returns: bool, true if red, false if not
         '''
-        if color[0] not in range(0,90):
-            return False
-        if color[1] not in range(30, 165):
-            return False
-        if color[2] not in range(100, 257):
-            return False
-        return True
+        if all(c < 100 for c in color):
+            return True
+        return False
 
     def readGrid(self) -> np.ndarray:
         '''
@@ -128,12 +124,12 @@ class GridReader:
 
         returns: 2d array, 0 denoting white, 1 denoting red
         '''
-        spacing = 52
-        offset = -15
+        spacing = 53
+        offset = -21
         for x in range (1, self.__squares_on_side + 1):
             for y in range (1, self.__squares_on_side + 1):
                 #print(self.__widthImg/ self.__squares_on_side)
-                #cv2.circle(self.__warped, (x * spacing + offset, y * spacing + offset), 5, (0, 255, 0))
+                # cv2.circle(self.__warped, (x * spacing + offset, y * spacing + offset), 5, (0, 255, 0))
                 # print(x, ",", y,":" , self.__warped[x * spacing + offset, y * spacing + offset])
                 if self.isFilled(self.__warped[x * spacing + offset, y * spacing + offset]):
                     self.__grid[x - 1, y - 1] = 1

@@ -68,6 +68,7 @@ def test():
     try:
         PG.callMaze(filename, falsePaths, lightMode)
     except UnboundLocalError:
+        print("gridReader failed to read grid")
         return Response(status=500)
     return {}
 

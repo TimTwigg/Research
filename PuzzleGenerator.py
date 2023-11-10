@@ -103,6 +103,8 @@ class PuzzleGenerator:
         maze = Maze(self._grid)
         # print the maze to console
         print(maze)
+        for r in self._grid:
+            print(r)
         # create params for generate function
         coords = (self._x, self._y, self._z)
         cmdCoords = (self._x + maze.max_x + 5, self._y + 1, self._z + maze.max_y)
