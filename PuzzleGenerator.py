@@ -1,4 +1,4 @@
-# updated 9 October 2023
+# updated 16 November 2023
 
 import subprocess
 import cv2
@@ -103,15 +103,13 @@ class PuzzleGenerator:
         maze = Maze(self._grid)
         # print the maze to console
         print(maze)
-        for r in self._grid:
-            print(r)
         # create params for generate function
         coords = (self._x, self._y, self._z)
         cmdCoords = (self._x + maze.max_x + 5, self._y + 1, self._z + maze.max_y)
         cmdDirection = (0, -1)
         
         # generate the list of commands
-        commands = generate(maze, coords, cmdCoords, cmdDirection, {"falsePaths": falsePaths, "light": lightMode})
+        commands = generate(maze, coords, cmdCoords, cmdDirection, falsePaths, lightMode)
         
         # !!!! DON'T UNCOMMENT !!!!
         # ########################
