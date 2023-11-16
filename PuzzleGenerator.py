@@ -109,7 +109,7 @@ class PuzzleGenerator:
         cmdDirection = (0, -1)
         
         # generate the list of commands
-        commands = generate(maze, coords, cmdCoords, cmdDirection, falsePaths, lightMode)
+        commands = generate(maze, coords, cmdCoords, cmdDirection, lightMode, falsePaths)
         
         # !!!! DON'T UNCOMMENT !!!!
         # ########################
