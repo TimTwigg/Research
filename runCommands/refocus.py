@@ -2,6 +2,7 @@
 
 import win32gui
 import win32con
+import win32com.client
 import re
 
 #https://stackoverflow.com/questions/2090464/python-window-activation
@@ -33,6 +34,8 @@ class WindowMgr:
         win32gui.SetForegroundWindow(self._handle)
 
 def setFocus(wildcard: str) -> None:
+    shell = win32com.client.Dispatch("WScript.shell")
+    shell.SendKeys("%")
     w = WindowMgr()
     w.find_window_wildcard(wildcard)
     w.set_foreground()

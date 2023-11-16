@@ -1,4 +1,4 @@
-# updated 9 October 2023 2023
+# updated 9 October 2023
 
 import subprocess
 import cv2
