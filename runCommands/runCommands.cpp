@@ -97,11 +97,13 @@ int main(int argc, char** argv) {
             append(c, v);
         }
 
-        Sleep(25); // pause
+        int basePause = 20;
+
+        Sleep(basePause); // pause
         press(SLASH); // open command line
-        Sleep(100); // wait for command line to open
+        Sleep(basePause*4); // wait for command line to open
         SendInput(v.size(), v.data(), sizeof(INPUT)); // print command
-        Sleep(100); // wait for command to print
+        Sleep(basePause*3); // wait for command to print
         press(ENTER); // press enter to run command
     }
 

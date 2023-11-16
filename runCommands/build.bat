@@ -1,2 +1,2 @@
 @ECHO OFF
-clang++ runCommands.cpp -o runCommands.exe
+g++ runCommands.cpp -o runCommands.exe

@@ -21,7 +21,7 @@ const Camera = () => {
     const [devices, SetDevices] = useState([]);
     const [deviceID, SetDeviceID] = useState(0);
     const [image, SetImage] = useState(square);
-    const [checked, SetChecked] = useState(false);
+    const [prevState, SetPrevState] = useState(true);
     const [gridSize, SetGridSize] = useState(15);
     const [enableCamera, SetEnableCamera] = useState(false);
     const [falsePaths, SetFalsePaths] = useState(true);
@@ -73,14 +73,14 @@ const Camera = () => {
                     <label className = "two columns offset-by-one column" htmlFor = "cameraSelect">Camera</label>
                     <select className = "eight columns" id = "cameraSelect" onChange = {item => SetDeviceID(item.target.value)}>
                         {
-                            devices.map((dev, i) => <option key = {i} value = {dev.deviceId}>{dev.label}</option>)
+                            devices.map((dev, i) => <option key = {i} value = {dev.deviceId} selected = {!dev.label.includes("USB")}>{dev.label}</option>)
                         }
                     </select>
                 </span>
                 
                 <span className = "twelve columns">
                     <label className = "three columns offset-by-one column" htmlFor = "testCheck">Display Previous State</label>
-                    <input type = "checkbox" id = "testCheck" className = "two columns" onChange = {ev => SetChecked(ev.target.checked)}/>
+                    <input type = "checkbox" id = "testCheck" className = "two columns" defaultChecked = {prevState} onChange = {ev => SetPrevState(ev.target.checked)}/>
                 </span>
 
                 <span className = "twelve columns">
@@ -125,7 +125,7 @@ const Camera = () => {
             </div>
 
             <div className = "one-half column">
-                {checked &&
+                {prevState &&
                     <div>
                         <p className = "underline">Previous Image</p>
                         <img src = {image} alt = "" height = {360}/>

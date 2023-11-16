@@ -242,7 +242,6 @@ def generate(maze: Maze, coords: tuple[int, int, int], cmdCoords: tuple[int, int
         light (bool): change to light mode, default false
         falsePaths (bool): generate false paths, default true
     """
-    print(light, falsePaths)
     global Direction, Blocks, TYPES
     class Direction(Enum):
         UP = (0, -5)
