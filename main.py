@@ -1,4 +1,4 @@
-# updated 30 October 2023
+# updated 16 November 2023
 # This module uses threading to run both the server and the website from one terminal, with one command/click
 
 import atexit
@@ -64,7 +64,7 @@ def server():
 def website():
     """Start website"""
     log("[Start] WebInterface")
-    subprocess.call(["gooey\\start.bat"], **kwargs)
+    subprocess.call(["gui\\start.bat"], **kwargs)
 
 def openBrowser():
     """Open the browser to the localhost address hosted by the server"""
