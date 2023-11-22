@@ -6,4 +6,17 @@ Minecraft Accessability Research Project aiming to allow visually impaired peopl
 
 Run `main.py` to start the server and web interface.
 
-## ToDo
+## Dependencies
+
+The project has a number of dependencies outside of the Python and C++ standard development environments.
+
+### Python
+
+- flask
+- flask_cors
+- numpy
+- cv2
+
+### npm
+
+- next

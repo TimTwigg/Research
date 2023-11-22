@@ -1,11 +1,8 @@
-# Updated 9 October 2023
+# Updated 22 November 2023
 # Flask server to connect the python puzzle generation to the website
 
-from pathlib import Path
-import sys
 import os
 from datetime import datetime
-sys.path.append(str(Path().absolute() / "Flask")) # add the local distribution of Flask to the path
 from flask import Flask, request, Response
 from flask_cors import CORS
 from PuzzleGenerator import PuzzleGenerator
