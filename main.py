@@ -64,7 +64,8 @@ def server():
 def website():
     """Start website"""
     log("[Start] WebInterface")
-    subprocess.call(["gui\\start.bat"], **kwargs)
+    # subprocess.call(["gui\\start.bat"], **kwargs) # new NextJS site
+    subprocess.call(["gooey\\start.bat"], **kwargs) # old Create-React-App site (framework is deprecated)
 
 def openBrowser():
     """Open the browser to the localhost address hosted by the server"""
